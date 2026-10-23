@@ -1,0 +1,24 @@
+{
+  "name": "personal-monitor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "shared",
+    "server",
+    "client"
+  ],
+  "engines": {
+    "node": "24.19.0"
+  },
+  "scripts": {
+    "build": "npm run build -w shared && npm run build -w server && npm run build -w client",
+    "start": "npm run start -w server",
+    "setup:telegram": "npm run setup:telegram -w server",
+    "check": "tsc -p shared && tsc -p server --noEmit && tsc -p client"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "@types/node": "24.10.1"
+  }
+}

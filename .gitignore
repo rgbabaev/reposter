@@ -1,0 +1,11 @@
+node_modules/
+**/dist/
+*.tsbuildinfo
+.env*
+config.json
+*.sqlite*
+*.session*
+data/
+*.lock.pid
+
+**/.monitor.lock*

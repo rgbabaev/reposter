@@ -1,0 +1,22 @@
+{
+  "password": "REPLACE_WITH_A_LONG_RANDOM_PASSWORD",
+  "bind": "127.0.0.1",
+  "port": 3000,
+  "publicOrigin": "http://127.0.0.1:3000",
+  "trustedProxies": [],
+  "databasePath": "/srv/personal-monitor/data/monitor.sqlite",
+  "sessionPath": "/srv/personal-monitor/data/telegram/session",
+  "telegram": {
+    "apiId": 0,
+    "apiHash": "REPLACE_WITH_YOUR_TELEGRAM_API_HASH"
+  },
+  "smtp": {
+    "host": "smtp.example.com",
+    "port": 465,
+    "secure": true,
+    "user": "REPLACE_WITH_SMTP_USERNAME",
+    "password": "REPLACE_WITH_SMTP_PASSWORD",
+    "from": "monitor@example.com",
+    "to": "owner@example.com"
+  }
+}

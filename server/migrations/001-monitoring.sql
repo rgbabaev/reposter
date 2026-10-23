@@ -1,0 +1,16 @@
+CREATE TABLE owners (id TEXT PRIMARY KEY CHECK(id='owner'));
+INSERT INTO owners VALUES ('owner');
+CREATE TABLE accounts (id TEXT PRIMARY KEY CHECK(id='telegram'), owner_id TEXT NOT NULL REFERENCES owners(id), provider TEXT NOT NULL CHECK(provider='telegram'));
+INSERT INTO accounts VALUES ('telegram','owner','telegram');
+CREATE TABLE sources (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES owners(id), account_id TEXT NOT NULL REFERENCES accounts(id), external_id TEXT NOT NULL, topic_id TEXT NOT NULL DEFAULT '', name TEXT NOT NULL, kind TEXT NOT NULL, url TEXT, enabled INTEGER NOT NULL DEFAULT 0, selected_at TEXT NOT NULL, error TEXT, UNIQUE(account_id, external_id, topic_id));
+CREATE TABLE positions (source_id TEXT PRIMARY KEY REFERENCES sources(id) ON DELETE CASCADE, position TEXT NOT NULL);
+CREATE TABLE rules (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES owners(id), source_id TEXT NOT NULL REFERENCES sources(id) ON DELETE CASCADE, name TEXT NOT NULL, enabled INTEGER NOT NULL, conditions TEXT NOT NULL, attachment_types TEXT NOT NULL, created_at TEXT NOT NULL);
+CREATE TABLE albums (account_id TEXT NOT NULL REFERENCES accounts(id), external_id TEXT NOT NULL, album_id TEXT NOT NULL, payload TEXT NOT NULL, ready_at TEXT NOT NULL, PRIMARY KEY(account_id,external_id,album_id));
+CREATE TABLE match_keys (account_id TEXT NOT NULL, external_id TEXT NOT NULL, identity TEXT NOT NULL, PRIMARY KEY(account_id,external_id,identity));
+CREATE TABLE matches (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES owners(id), account_id TEXT NOT NULL REFERENCES accounts(id), external_id TEXT NOT NULL, identity TEXT NOT NULL, snapshot TEXT NOT NULL, matched_at TEXT NOT NULL, UNIQUE(account_id,external_id,identity));
+CREATE TABLE activity (id TEXT PRIMARY KEY, level TEXT NOT NULL, code TEXT NOT NULL, incident_key TEXT, message TEXT NOT NULL, occurrences INTEGER NOT NULL DEFAULT 1, opened_at TEXT NOT NULL, last_seen_at TEXT NOT NULL, resolved_at TEXT);
+CREATE UNIQUE INDEX active_incident ON activity(incident_key) WHERE level='error' AND resolved_at IS NULL;
+CREATE TABLE email_jobs (id TEXT PRIMARY KEY, kind TEXT NOT NULL, match_id TEXT, incident_id TEXT, payload TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', attempts INTEGER NOT NULL DEFAULT 0, next_attempt_at TEXT NOT NULL, last_error TEXT, sent_at TEXT);
+CREATE INDEX jobs_ready ON email_jobs(status,next_attempt_at);
+CREATE INDEX matches_recent ON matches(matched_at DESC);
+CREATE TABLE sessions (token_hash TEXT PRIMARY KEY, expires_at TEXT NOT NULL);
