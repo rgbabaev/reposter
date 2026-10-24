@@ -72,6 +72,7 @@ export class TelegramConnector implements Connector {
           this.report(this.providerError(error).code);
         };
       }
+      await this.client.session.load();
       if (!this.client.session.authKey)
         throw new ProviderError("TELEGRAM_AUTH");
       await this.client.connect();

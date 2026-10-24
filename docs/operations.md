@@ -4,13 +4,13 @@
 
 Use Node.js **24.19.0**, npm workspaces, `npm ci`, then `npm run build`. Run `node server/dist/index.js` or `npm start` from the checkout. Do not use a development Vite server in production. One application process serves the compiled UI and JSON API and starts recovery and email workers without browser access.
 
-Use a dedicated operating-system user. Keep the protected configuration, database, authorized Telegram session and temporary recovery state on a persistent **local** volume outside the checkout. New application files are private through umask `0077`; the configuration and session files must have mode `0600`, and the session directory must have mode `0700`.
+Use a dedicated operating-system user. Keep the protected configuration, database, authorized Telegram session and temporary recovery state on persistent **local** storage. The gitignored `data/` directory inside the checkout is supported. New application files are private through umask `0077`; the configuration and session files must have mode `0600`, and the session directory must have mode `0700`.
 
 The application acquires an exclusive SQLite lock through `.monitor.lock` in the database directory before opening the application database. A second instance using the same directory must fail startup. Kernel locks are released on process exit or crash; the lock file may remain. **Never delete or replace the lock file while any instance is running.** Share the same local data volume across container restarts and keep all application instances stopped during maintenance. Network filesystems are not supported for these SQLite files.
 
 ## Protected file configuration
 
-Start with [config.example.json](../config.example.json). It deliberately contains invalid Telegram placeholders until edited. Set `MONITOR_CONFIG` to the absolute path of the protected JSON file; this environment variable contains a path, not configuration secrets.
+Start with [config.example.json](../config.example.json). It deliberately contains invalid Telegram placeholders until edited. By default, the application loads `config.json` from the repository root. Optionally set `MONITOR_CONFIG` to the absolute path of another protected JSON file; this environment variable contains a path, not configuration secrets.
 
 | Field | Meaning |
 | --- | --- |
@@ -18,8 +18,8 @@ Start with [config.example.json](../config.example.json). It deliberately contai
 | `bind`, `port` | Listener address and integer port from 1 to 65535 |
 | `publicOrigin` | Exact HTTPS origin, or loopback HTTP origin for local use; no path or trailing slash |
 | `trustedProxies` | Exact IP addresses of reverse proxies; CIDR ranges and arbitrary forwarded headers are not accepted |
-| `databasePath` | Absolute SQLite database path |
-| `sessionPath` | Absolute authorized Telegram session path outside the checkout; different from the database path |
+| `databasePath` | SQLite database path; relative paths resolve from the repository root |
+| `sessionPath` | Authorized Telegram session path; relative paths resolve from the repository root; different from the database path |
 | `telegram.apiId`, `telegram.apiHash` | Operator’s own application credentials from my.telegram.org |
 | `smtp.host`, `smtp.port` | SMTP server and port |
 | `smtp.secure` | `true` for implicit TLS, usually port 465; `false` requires STARTTLS, usually port 587 |
@@ -33,7 +33,7 @@ The API returns only safe configuration status. Credentials and storage paths ar
 ## Telegram credentials and QR setup
 
 1. Obtain `api_id` and `api_hash` from [my.telegram.org](https://my.telegram.org). QR login still requires these application credentials.
-2. Configure their values and a private session directory outside the checkout. Stop the application before CLI authorization or reconnection.
+2. Configure their values and a private session directory (for example, `data/telegram`). Stop the application before CLI authorization or reconnection.
 3. Run `MONITOR_CONFIG=/absolute/path/config.json npm run setup:telegram` in an interactive terminal.
 4. Open Telegram → Settings → Devices → Link Desktop Device and scan the displayed QR. Expired tokens refresh automatically. Treat the QR as a temporary authorization secret.
 5. Enter the two-step verification password in the terminal if requested. Input is hidden and the password is not saved.

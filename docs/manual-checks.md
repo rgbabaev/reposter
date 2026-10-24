@@ -20,6 +20,14 @@ Checks used disposable local databases, ad hoc commands, an isolated UI fixture 
 | Chromium mobile layout | Chromium 154 at 390×844 and 320px width: login, dashboard, source discovery/selection, two-condition rule creation with required Image, rule editing, match details, delivery view, settings and logout checked. No horizontal overflow observed. Form fields have labels, visible controls/links have 44px targets, and Tab moves to a field with a visible focus outline. |
 | Background UI polling | Polling pauses when visibility is hidden and resumes on visibility change. |
 
+## Session restart correction (2026-10-24)
+
+Review found that the connector checked `StringSession.authKey` before calling its asynchronous `load()`. A valid saved session therefore failed the authorization check before connecting. The connector now loads the session before checking its key. Session parsing failures are classified as authorization failures, and session paths must be regular, owner-only files; directories, FIFOs and symlinks are rejected before reading.
+
+Ad hoc local checks passed for missing and malformed sessions, directories, FIFOs and symlinks. A synthetic saved session with a 256-byte authorization key was loaded through the real session reader, then exercised through the connector with network operations stubbed: its key was available before connection, and the connector reached connected status without an authorization incident. This does not verify real Telegram authorization or reconnect behavior.
+
+`npm run build` and `npm run check` passed. This environment provides Node.js 24.15.0 rather than the pinned 24.19.0; dependency installation used `npm ci --engine-strict=false` without changing the pin or lockfile. The final server build also passed after the load-order correction. `MONITOR_CONFIG` is unset, so task 12 remains pending and Phase 2 has not started.
+
 ## Pending live acceptance (task 12)
 
 The environment has no protected real-provider configuration. Supply only its path through `MONITOR_CONFIG`; do not commit it or send secret values in chat. The operator must complete the interactive QR scan and two-step verification if enabled.

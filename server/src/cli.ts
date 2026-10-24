@@ -1,5 +1,5 @@
 import { StringDecoder } from "node:string_decoder";
-import { loadConfig } from "./config.js";
+import { loadConfig, type Config } from "./config.js";
 import { makeClient, saveSession } from "./adapters/telegram/session.js";
 import qr from "qrcode-terminal";
 async function password(): Promise<string> {
@@ -40,7 +40,15 @@ async function password(): Promise<string> {
 }
 async function main() {
   process.umask(0o077);
-  const config = loadConfig();
+  let config: Config;
+  try {
+    config = loadConfig();
+  } catch (error) {
+    // Configuration validation messages contain field requirements, never values.
+    console.error(error instanceof Error ? error.message : "Invalid configuration.");
+    process.exitCode = 1;
+    return;
+  }
   const client = makeClient(config);
   const cancel = () => {
     if (process.stdin.isTTY) process.stdin.setRawMode(false);

@@ -1,6 +1,6 @@
 import { isIP } from "node:net";
-import { readFileSync, statSync, realpathSync, lstatSync } from "node:fs";
-import { isAbsolute, dirname, resolve, relative, basename, sep } from "node:path";
+import { readFileSync, statSync, lstatSync } from "node:fs";
+import { isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 export interface Config {
   password: string;
@@ -22,11 +22,9 @@ export interface Config {
   };
 }
 export const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
-export function loadConfig(path = process.env.MONITOR_CONFIG): Config {
-  if (!path)
-    throw new Error(
-      "MONITOR_CONFIG: set the absolute path of a protected JSON configuration file",
-    );
+export function loadConfig(
+  path = process.env.MONITOR_CONFIG || resolve(repositoryRoot, "config.json"),
+): Config {
   if (!isAbsolute(path))
     throw new Error("MONITOR_CONFIG: must be an absolute path");
   let value: unknown;
@@ -101,23 +99,11 @@ export function loadConfig(path = process.env.MONITOR_CONFIG): Config {
       "trustedProxies",
       "HTTPS requires at least one trusted reverse proxy IP",
     );
-  for (const key of ["databasePath", "sessionPath"])
-    check(text(x[key]) && isAbsolute(x[key]), key, "must be an absolute path");
-  if (text(x.sessionPath) && isAbsolute(x.sessionPath)) {
-    // Resolve existing parent symlinks so secrets cannot silently land inside a checkout.
-    let parent = dirname(x.sessionPath);
-    const parts: string[] = [];
-    while (true) {
-      try {
-        parent = resolve(realpathSync(parent), ...parts.reverse());
-        break;
-      } catch {
-        const next = dirname(parent);
-        if (next === parent) break;
-        parts.push(basename(parent));
-        parent = next;
-      }
-    }
+  for (const key of ["databasePath", "sessionPath"]) {
+    check(text(x[key]), key, "must be a non-empty path");
+    if (text(x[key])) x[key] = resolve(repositoryRoot, x[key]);
+  }
+  if (text(x.sessionPath)) {
     try {
       check(
         !lstatSync(x.sessionPath).isSymbolicLink(),
@@ -127,12 +113,6 @@ export function loadConfig(path = process.env.MONITOR_CONFIG): Config {
     } catch {
       /* new file */
     }
-    const rel = relative(repositoryRoot, parent);
-    check(
-      rel === ".." || rel.startsWith(".." + sep) || isAbsolute(rel),
-      "sessionPath",
-      "must be outside the repository",
-    );
   }
   check(
     Number.isInteger(x.telegram?.apiId) && x.telegram.apiId > 0,

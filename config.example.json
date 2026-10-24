@@ -4,8 +4,8 @@
   "port": 3000,
   "publicOrigin": "http://127.0.0.1:3000",
   "trustedProxies": [],
-  "databasePath": "/srv/personal-monitor/data/monitor.sqlite",
-  "sessionPath": "/srv/personal-monitor/data/telegram/session",
+  "databasePath": "/absolutepath/data/monitor.sqlite",
+  "sessionPath": "/absolutepath/data/telegram/session",
   "telegram": {
     "apiId": 0,
     "apiHash": "REPLACE_WITH_YOUR_TELEGRAM_API_HASH"

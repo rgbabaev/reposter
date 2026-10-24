@@ -14,19 +14,19 @@ import { StringSession } from "telegram/sessions/index.js";
 import { Logger, LogLevel } from "telegram/extensions/Logger.js";
 import type { Config } from "../../config.js";
 export function makeClient(config: Config): TelegramClient {
-  let session = "";
+  let session: StringSession;
   try {
-    if (lstatSync(config.sessionPath).isSymbolicLink())
-      throw new Error("SESSION_SYMLINK");
-    if (statSync(config.sessionPath).mode & 0o077)
-      throw new Error("SESSION_PERMISSIONS");
-    session = readFileSync(config.sessionPath, "utf8").trim();
+    const stat = lstatSync(config.sessionPath);
+    if (!stat.isFile() || stat.mode & 0o077)
+      throw new Error("SESSION_FILE");
+    session = new StringSession(readFileSync(config.sessionPath, "utf8").trim());
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT")
       throw new Error("TELEGRAM_AUTH");
+    session = new StringSession("");
   }
   return new TelegramClient(
-    new StringSession(session),
+    session,
     config.telegram.apiId,
     config.telegram.apiHash,
     {
