@@ -9,6 +9,7 @@ import type {
   IncomingItem,
 } from "@monitor/shared";
 import { makeClient } from "./session.js";
+import { history } from "./history.js";
 export class TelegramConnector implements Connector {
   readonly accountId = "telegram";
   protected client?: TelegramClient;
@@ -251,6 +252,10 @@ export class TelegramConnector implements Connector {
   ): AsyncIterable<IncomingItem> {
     const client = this.ready();
     try {
+      // An idle source needs only the head lookup. Avoid entity/full-channel and
+      // history requests on every poll when there is nothing new to recover.
+      const upper = Number(await this.currentPosition(externalSourceId));
+      if (BigInt(upper) <= BigInt(after)) return;
       const entity = await client.getEntity(externalSourceId);
       if (entity instanceof Api.Channel) {
         const full = await client.invoke(
@@ -263,14 +268,7 @@ export class TelegramConnector implements Connector {
         )
           this.report("TELEGRAM_HISTORY");
       }
-      const upper = Number(await this.currentPosition(externalSourceId));
-      for await (const message of client.iterMessages(externalSourceId, {
-        minId: Number(after),
-        maxId: upper + 1,
-        reverse: true,
-        limit: undefined,
-        waitTime: 1,
-      })) {
+      for await (const message of history(client, externalSourceId, after, upper)) {
         if (!Number.isFinite(message.date)) {
           yield {
             accountId: this.accountId,
