@@ -868,3 +868,31 @@ select:disabled {
     scroll-behavior: auto !important;
   }
 }
+
+.post-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.post-images {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.post-images img,
+.image-draft img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.image-draft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.image-draft span {
+  overflow-wrap: anywhere;
+  min-width: 0;
+  flex: 1;
+}

@@ -10,6 +10,10 @@ import type {
 } from "@monitor/shared";
 import { makeClient } from "./session.js";
 import { history } from "./history.js";
+import { abortable, abortableItems } from "../../cancellation.js";
+import { PublicationError, type PublicationRequest } from "../../connector.js";
+import type { PublicationDestination } from "@monitor/shared";
+import { publishTelegram, verifyTelegramPublication } from "./publication.js";
 export class TelegramConnector implements Connector {
   readonly accountId = "telegram";
   protected client?: TelegramClient;
@@ -19,6 +23,7 @@ export class TelegramConnector implements Connector {
   private timer?: ReturnType<typeof setInterval>;
   private connecting = false;
   private stopped = false;
+  private cancellation = new AbortController();
   private onConnected: () => void = () => {};
   protected signal: (id: string) => void = () => {};
   protected report: (code: string) => void = () => {};
@@ -34,8 +39,8 @@ export class TelegramConnector implements Connector {
         history: true,
         topics: true,
         attachmentMetadata: true,
-        publication: false,
-        deletion: false,
+        publication: true,
+        deletion: true,
       },
       instruction:
         "Run MONITOR_CONFIG=/absolute/path/config.json npm run setup:telegram, then restart the application.",
@@ -51,6 +56,7 @@ export class TelegramConnector implements Connector {
     this.report = onError;
     this.onConnected = onConnected;
     this.stopped = false;
+    this.cancellation = new AbortController();
     await this.connect();
     if (this.stopped) return;
     this.timer = setInterval(() => {
@@ -70,19 +76,25 @@ export class TelegramConnector implements Connector {
       if (!this.client) {
         this.client = makeClient(this.config);
         this.client.onError = async (error) => {
-          this.report(this.providerError(error).code);
+          if (!this.stopped) this.report(this.providerError(error).code);
         };
       }
-      await this.client.session.load();
+      await abortable(this.client.session.load(), this.cancellation.signal);
       if (!this.client.session.authKey)
         throw new ProviderError("TELEGRAM_AUTH");
-      await this.client.connect();
+      await abortable(this.client.connect(), this.cancellation.signal);
       if (this.stopped) {
         await this.client.destroy();
         return;
       }
-      await this.client.invoke(new Api.updates.GetState());
-      for await (const _dialog of this.client.iterDialogs({})) {
+      await abortable(
+        this.client.invoke(new Api.updates.GetState()),
+        this.cancellation.signal,
+      );
+      for await (const _dialog of abortableItems(
+        this.client.iterDialogs({}),
+        this.cancellation.signal,
+      )) {
         /* rebuild provider-only access-hash cache after restart */
       }
       if (this.stopped) {
@@ -114,11 +126,13 @@ export class TelegramConnector implements Connector {
     if (this.eventsInstalled || !this.client) return;
     this.eventsInstalled = true;
     this.client.addEventHandler(async (event) => {
+      if (this.stopped) return;
       const id = event.message.chatId?.toString();
       if (id) this.signal(id);
     }, new NewMessage({}));
   }
   protected ready(): TelegramClient {
+    if (this.stopped) throw new ProviderError("TELEGRAM_STOPPED");
     if (
       !this.client ||
       this.status().state !== "connected" ||
@@ -156,15 +170,48 @@ export class TelegramConnector implements Connector {
   }
   async stop() {
     this.stopped = true;
+    this.cancellation.abort(new ProviderError("TELEGRAM_STOPPED"));
     if (this.timer) clearInterval(this.timer);
     await this.client?.destroy();
     this.state = "disconnected";
   }
+  async publish(request: PublicationRequest, recordIds: (ids: string[]) => void) {
+    try {
+      return await publishTelegram(this.ready(), request, this.cancellation.signal, recordIds);
+    } catch (error) {
+      if (error instanceof PublicationError && error.cause !== undefined)
+        this.providerError(error.cause);
+      throw this.providerError(error);
+    }
+  }
+  async deletePublication(destination: PublicationDestination, ids: string[]) {
+    try {
+      const client = this.ready();
+      const messages = await abortable(client.getMessages(destination.externalId, { ids: ids.map(Number) }), this.cancellation.signal);
+      const present = messages.filter(message => message instanceof Api.Message && ids.includes(String(message.id))).map(message => message.id);
+      if (present.length) await abortable(client.deleteMessages(destination.externalId, present, { revoke: true }), this.cancellation.signal);
+    } catch (error) {
+      throw this.providerError(error);
+    }
+  }
+  async verifyPublication(request: PublicationRequest, ids: string[], since: string) {
+    try {
+      await verifyTelegramPublication(this.ready(), request, ids, since, this.cancellation.signal);
+    } catch (error) {
+      throw this.providerError(error);
+    }
+  }
   async listSources(): Promise<DiscoveredSource[]> {
+    return abortable(this.discoverSources(), this.cancellation.signal);
+  }
+  private async discoverSources(): Promise<DiscoveredSource[]> {
     const client = this.ready();
     const results: DiscoveredSource[] = [];
     try {
-      for await (const dialog of client.iterDialogs({})) {
+      for await (const dialog of abortableItems(
+        client.iterDialogs({}),
+        this.cancellation.signal,
+      )) {
         const entity = dialog.entity;
         if (
           !entity ||
@@ -193,14 +240,17 @@ export class TelegramConnector implements Connector {
             offsetId = 0,
             offsetTopic = 0;
           while (true) {
-            const response = await client.invoke(
-              new Api.channels.GetForumTopics({
-                channel: entity,
-                offsetDate,
-                offsetId,
-                offsetTopic,
-                limit: 100,
-              }),
+            const response = await abortable(
+              client.invoke(
+                new Api.channels.GetForumTopics({
+                  channel: entity,
+                  offsetDate,
+                  offsetId,
+                  offsetTopic,
+                  limit: 100,
+                }),
+              ),
+              this.cancellation.signal,
             );
             const topics = response.topics.filter(
               (topic): topic is Api.ForumTopic =>
@@ -238,9 +288,10 @@ export class TelegramConnector implements Connector {
   }
   async currentPosition(externalSourceId: string): Promise<string> {
     try {
-      const messages = await this.ready().getMessages(externalSourceId, {
-        limit: 1,
-      });
+      const messages = await abortable(
+        this.ready().getMessages(externalSourceId, { limit: 1 }),
+        this.cancellation.signal,
+      );
       return String(messages[0]?.id || 0);
     } catch (error) {
       throw this.providerError(error);
@@ -256,10 +307,14 @@ export class TelegramConnector implements Connector {
       // history requests on every poll when there is nothing new to recover.
       const upper = Number(await this.currentPosition(externalSourceId));
       if (BigInt(upper) <= BigInt(after)) return;
-      const entity = await client.getEntity(externalSourceId);
+      const entity = await abortable(
+        client.getEntity(externalSourceId),
+        this.cancellation.signal,
+      );
       if (entity instanceof Api.Channel) {
-        const full = await client.invoke(
-          new Api.channels.GetFullChannel({ channel: entity }),
+        const full = await abortable(
+          client.invoke(new Api.channels.GetFullChannel({ channel: entity })),
+          this.cancellation.signal,
         );
         if (
           full.fullChat instanceof Api.ChannelFull &&
@@ -268,7 +323,10 @@ export class TelegramConnector implements Connector {
         )
           this.report("TELEGRAM_HISTORY");
       }
-      for await (const message of history(client, externalSourceId, after, upper)) {
+      for await (const message of abortableItems(
+        history(client, externalSourceId, after, upper),
+        this.cancellation.signal,
+      )) {
         if (!Number.isFinite(message.date)) {
           yield {
             accountId: this.accountId,

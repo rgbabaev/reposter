@@ -16,6 +16,12 @@ import {
   SourcesPage,
 } from "./pages";
 import "./style.css";
+import {
+  PostsPage,
+  PostEditorPage,
+  PublicationsPage,
+} from "./publication-pages";
+import { ScheduleEditorPage, SchedulesPage } from "./schedule-pages";
 
 function Login({ onLogin }: { onLogin: () => void }) {
   const [password, setPassword] = useState("");
@@ -83,7 +89,11 @@ function Workspace({ onLogout }: { onLogout: () => void }) {
             ? "Matched Messages"
             : path.startsWith("/rules/")
               ? "Rule"
-              : path.slice(1).replace(/^./, (c) => c.toUpperCase());
+              : path.startsWith("/posts/")
+                ? "Post"
+                : path === "/schedules/new"
+                  ? "New schedule"
+                  : path.slice(1).replace(/^./, (c) => c.toUpperCase());
     document.title = title + " · Personal Monitor";
     window.scrollTo(0, 0);
     const timer = setTimeout(
@@ -95,6 +105,7 @@ function Workspace({ onLogout }: { onLogout: () => void }) {
   let page;
   const ruleEdit = path.match(/^\/rules\/([^/]+)\/edit$/);
   const matchDetail = path.match(/^\/matches\/([^/]+)$/);
+  const postEdit = path.match(/^\/posts\/([^/]+)\/edit$/);
   if (path === "/") page = <Dashboard />;
   else if (path === "/sources") page = <SourcesPage />;
   else if (path === "/rules") page = <RulesPage />;
@@ -107,6 +118,12 @@ function Workspace({ onLogout }: { onLogout: () => void }) {
     page = <ConnectorsPage status={connector.data} />;
   else if (path === "/activity") page = <ActivityPage />;
   else if (path === "/settings") page = <SettingsPage onLogout={onLogout} />;
+  else if (path === "/posts") page = <PostsPage />;
+  else if (path === "/posts/new") page = <PostEditorPage />;
+  else if (postEdit) page = <PostEditorPage id={postEdit[1]} />;
+  else if (path === "/publications") page = <PublicationsPage />;
+  else if (path === "/schedules") page = <SchedulesPage />;
+  else if (path === "/schedules/new") page = <ScheduleEditorPage />;
   else
     page = (
       <>

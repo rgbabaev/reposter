@@ -1,6 +1,6 @@
 # Implementation Tasks
 
-Reference: `specification.md`. Implementation status and actual check results: [manual-checks.md](manual-checks.md). Tasks 01–11 are implemented; their live-provider/browser completion checks remain pending where noted. Task 12 blocks Phase 2. Complete Release 1 before Phase 2. Follow the order below. Each task states its completion check. Use manual checks; do not add an automated test suite or CI in Release 1.
+Reference: `specification.md`. Implementation status and actual check results: [manual-checks.md](manual-checks.md). Tasks 01–11 and 13–15 are implemented. The operator reports Release 1 checks passed except physical-phone testing; desktop Safari passed, and the operator authorized proceeding with the phone check deferred. Live Phase 2 publication checks remain pending. Follow the order below. Each task states its completion check. Use manual checks; do not add an automated test suite or CI in Release 1.
 
 ## Release 1: monitoring
 
@@ -88,34 +88,37 @@ Reference: `specification.md`. Implementation status and actual check results: [
 
 ### 12. Accept Release 1
 
-- [ ] Connect Telegram through the CLI. Select a source and create two rules.
-- [ ] Confirm one matching item creates one stored notification and one queued email with both matching rule names.
-- [ ] Confirm text can match without images; then require images and confirm text-only items fail.
-- [ ] Stop the application, add matching messages, and restart. Confirm recovery and duplicate handling.
-- [ ] Check SMTP outage recovery, invalid session handling, match retention, and mobile login/logout.
+- [x] Connect Telegram through the CLI. Select a source and create two rules.
+- [x] Confirm one matching item creates one stored notification and one queued email with both matching rule names.
+- [x] Confirm text can match without images; then require images and confirm text-only items fail.
+- [x] Stop the application, add matching messages, and restart. Confirm recovery and duplicate handling.
+- [x] Check SMTP outage recovery, invalid session handling, match retention, and desktop Safari login/logout.
+- [ ] Check source/rule setup and login/logout on a physical phone (deferred; desktop Safari passed).
 - Check: all results meet the specification. Record manual check results and known limits in the repository.
 
 ## Phase 2: publication and deletion
 
 ### 13. Add post storage and publication
 
-- [ ] Add post and image storage, upload validation, Posts UI, and one-destination publication.
-- [ ] Add connector publication capabilities and persist all returned message IDs.
+- [x] Add post and image storage, upload validation, Posts UI, and one-destination publication.
+- [x] Add connector publication capabilities and persist all returned message IDs.
 - Check: publish plain text and an image album to a group and a forum topic from the personal account.
 
 ### 14. Add persistent schedules
 
-- [ ] Add daily, weekly, and monthly UTC schedules, including month-end rules.
-- [ ] Add Schedules UI, Pause, Resume, and Run Now.
-- [ ] Serialize runs, preserve recurring times, and combine overdue intervals into one immediate run.
+- [x] Add daily, weekly, and monthly UTC schedules, including month-end rules.
+- [x] Add Schedules UI, Pause, Resume, and Run Now.
+- [x] Serialize runs, preserve recurring times, and combine overdue intervals into one immediate run.
 - Check: restart preserves schedules. A paused schedule stays paused. Run Now does not change the next recurring time.
+- Live result: operator reports Pause/Resume and unchanged recurring time after Run Now passed (2026-10-25). Restart/downtime checks remain pending.
 
 ### 15. Add replacement and failure recovery
 
-- [ ] Delete only the previous system publication before sending its replacement.
-- [ ] Track album deletions, partial sends, run state, and uncertain external results.
-- [ ] Stop replacement when deletion fails. Add activity records and email alerts.
+- [x] Delete only the previous system publication before sending its replacement.
+- [x] Track album deletions, partial sends, run state, and uncertain external results.
+- [x] Stop replacement when deletion fails. Add activity records and email alerts.
 - Check: a run removes the previous post. Restart during deletion or publication does not blindly send another copy.
+- Live result: operator reports replacement removed the previous publication and all album images (2026-10-25). Interrupted-run checks remain pending.
 
 ## Later work: ordered backlog
 

@@ -2,7 +2,7 @@
 
 All versions are exact and locked by package-lock.json. Runtime: Node.js 24.19.0.
 
-- telegram (GramJS): Telegram user-account authorization, discovery, live updates and history.
+- telegram (GramJS): Telegram user-account authorization, discovery, live updates, history, publication and deletion.
 - nodemailer: SMTP delivery using verified TLS.
 - qrcode-terminal: render rotating Telegram authorization QR tokens in a terminal.
 - preact: accessible interactive browser views.

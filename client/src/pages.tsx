@@ -1212,6 +1212,8 @@ export function MorePage() {
     <>
       <PageHeading title="More" />
       <nav class="card menu" aria-label="More pages">
+        <Link href="/posts"><span><strong>Posts</strong><small>Create and publish text and images</small></span><span aria-hidden="true">›</span></Link>
+        <Link href="/schedules"><span><strong>Schedules</strong><small>Recurring publications in UTC</small></span><span aria-hidden="true">›</span></Link>
         <Link href="/connectors">
           <span>
             <strong>Connectors</strong>

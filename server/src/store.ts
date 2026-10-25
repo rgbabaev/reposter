@@ -381,6 +381,18 @@ function incidentMessage(code: string): string {
     MONITORING:
       "Source processing failed. The completed position was retained.",
     STORAGE: "A storage operation failed. Check the persistent volume.",
+    PUBLICATION_UNCERTAIN:
+      "A publication result is uncertain. Review Telegram and reconcile the run in Posts before retrying.",
+    PUBLICATION_DELETE:
+      "Previous publication deletion failed. Replacement stopped; correct the cause and retry the run.",
+    PUBLICATION_REJECTED:
+      "Publication was rejected without sending. Check the error code in publication history, correct the cause and retry.",
+    PUBLICATION_PREPARATION:
+      "Publication preparation failed before sending. Check the post and destination, then retry.",
+    PUBLICATION_PARTIAL:
+      "A partial publication was confirmed. The next schedule run will remove its tracked messages before replacement.",
+    SCHEDULING:
+      "Schedule processing failed. Check storage and publication history.",
     HTTP: "An unexpected API error occurred.",
   };
   return (

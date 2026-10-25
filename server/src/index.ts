@@ -9,6 +9,8 @@ import { Monitor } from "./monitor.js";
 import { Sources } from "./sources.js";
 import { Serial } from "./serial.js";
 import { Api } from "./api.js";
+import { Publications } from "./publications.js";
+import { Schedules } from "./schedules.js";
 
 async function main() {
   process.umask(0o077);
@@ -26,7 +28,17 @@ async function main() {
   const sources = new Sources(store, connector, serial);
   const email = new EmailWorker(config, store);
   const monitor = new Monitor(store, connector, serial, () => email.wake());
-  const api = new Api(config, store, connector, sources, email);
+  const publications = new Publications(store, connector, () => email.wake());
+  const schedules = new Schedules(store, publications);
+  const api = new Api(
+    config,
+    store,
+    connector,
+    sources,
+    email,
+    publications,
+    schedules,
+  );
   const server = createServer((req, res) => {
     void api.handle(req, res);
   });
@@ -39,9 +51,21 @@ async function main() {
     if (stopping) return;
     stopping = true;
     if (retention) clearInterval(retention);
+    schedules.stop();
+    const pending = new Set([
+      "HTTP",
+      "Telegram",
+      "monitoring",
+      "email",
+      "publication",
+    ]);
+    const track = async (name: string, operation: Promise<unknown>) => {
+      await operation;
+      pending.delete(name);
+    };
     const deadline = setTimeout(() => {
       console.error(
-        "Shutdown deadline reached. Durable work resumes after restart.",
+        `Shutdown deadline reached while waiting for ${[...pending].join(", ")}. Durable work resumes after restart.`,
       );
       process.exit(1);
     }, 45_000);
@@ -50,13 +74,13 @@ async function main() {
     );
     server.closeIdleConnections();
     try {
-      // Disconnect first so blocked provider calls cannot hold up processing shutdown.
       const disconnect = connector.stop();
       await Promise.all([
-        monitor.stop(),
-        disconnect,
-        email.stop(),
-        stoppedHttp,
+        track("monitoring", monitor.stop()),
+        track("Telegram", disconnect),
+        track("email", email.stop()),
+        track("publication", publications.stop()),
+        track("HTTP", stoppedHttp),
       ]);
       store.db.close();
       lock.close();
@@ -96,9 +120,14 @@ async function main() {
     console.log("Personal Monitor started. All stored times are UTC.");
     void connector
       .start(
-        (id) => monitor.signal(id),
-        (code) => store.incident(code),
+        (id) => {
+          if (!stopping) monitor.signal(id);
+        },
+        (code) => {
+          if (!stopping) store.incident(code);
+        },
         () => {
+          if (stopping) return;
           try {
             for (const code of [
               "TELEGRAM_AUTH",
@@ -114,10 +143,12 @@ async function main() {
         },
       )
       .catch(() => {
-        store.incident("TELEGRAM_CONNECTION");
+        if (!stopping) store.incident("TELEGRAM_CONNECTION");
       });
     monitor.start();
     email.start();
+    publications.start();
+    schedules.start();
     const prune = () => {
       try {
         store.prune();

@@ -47,11 +47,23 @@ In Sources, refresh discovery to see accessible groups, channels, private chats 
 
 Use SMTP with a valid TLS certificate. STARTTLS is mandatory when `secure` is false; certificate verification is never disabled. The worker sends required match fields in plain text and escaped HTML, without media attachments. Each queued job retains its own immutable message snapshot, so deleting a match does not cancel queued delivery. After SMTP acceptance, the job payload is cleared; delivery status remains available.
 
-Temporary match-email failures retry with increasing delays starting at 15 seconds and capped at one hour. After ten failed attempts, a match-email job requires manual retry; permanent authentication or SMTP rejection failures can require manual retry earlier. Open Activity Log → Email delivery or the match detail to inspect attempts, the next attempt time and a safe error code, then retry after correcting the cause.
+Temporary match-email failures keep retrying with increasing delays starting at 15 seconds and capped at one hour, including after restart. Permanent authentication or SMTP rejection failures require manual retry. Open Activity Log → Email delivery or the match detail to inspect attempts, the next attempt time and a safe error code, then retry after correcting the cause. Jobs already marked failed require manual retry.
 
 Incident alerts remain pending until SMTP works. Repeated occurrences of an open incident increment its count rather than creating another alert job. A failed alert does not recursively generate more alerts. SMTP acceptance marks a job sent; inbox delivery cannot be confirmed. An uncertain result can cause a duplicate email even with a stable Message-ID. Delivery is at least once.
 
 Operational activity older than 30 days is pruned. Open incidents and activity referenced by pending delivery jobs remain. Matched content stays until manually deleted. Errors use safe codes without credentials, session values or message bodies. Database failures fall back to stderr. A stopped or killed process cannot email its own failure; use an external service supervisor or host monitor for that case.
+
+## Posts and schedules
+
+Open **More → Posts** to create reusable plain text and ordered JPEG/PNG images. Limits: 4096 text characters, or 1024 with images; ten images; 5 MiB each and 20 MiB total. Image signatures, dimensions and declared types are checked; Telegram validates media during upload. Images live in SQLite and are included in stopped-process backups. Image previews require login. Posts used by publication history cannot be deleted. Queued, running and uncertain runs prevent editing their post. Failed runs do not block edits: retry uses the original text/images, while new publications use the edited post. Images retained for failed retries are removed when no unfinished run needs them.
+
+Choose a group or forum topic already selected in Sources. **Publish now** sends once from the personal account. **More → Schedules** creates daily, weekly or monthly UTC publication. Monthly dates clamp to month end while preserving the original day. Pause survives restart and leaves queued recurring work paused; an in-progress run may finish. Run Now works while paused and leaves the next recurring time unchanged. Resume runs one overdue publication, then returns to the original calendar. Runs are serialized.
+
+Each scheduled run deletes only its recorded previous message IDs before publishing. All album IDs and deletion checkpoints are retained. Already-missing messages count as deleted. A deletion failure stops replacement and queues an incident email. Check **Posts → Publication history**, correct the cause, then retry the failed run. Queued or failed runs can be cancelled; cancellation does not restore deleted messages.
+
+Preparation failures and explicit Telegram client-error rejections become **failed**, with safe provider error codes and manual retry. Interrupted or ambiguous sends become **uncertain** and block that schedule. Check the destination in Telegram, then use **Save reviewed result** to confirm every message ID, including album members, or confirm that nothing was sent. Supplied IDs are checked against outgoing message, time, text, topic and album metadata; the operator must confirm they belong to this system run. Known IDs cannot be discarded. Confirmed partial albums become the next replacement's deletion target. Confirmed absence allows retry or cancellation and preserves the original error code. Uncertain runs are never automatically resent. See [ADR 0004](adr/0004-durable-publication-runs.md) and [ADR 0005](adr/0005-utc-calendar-schedules.md).
+
+Restart after building to apply the publication migration and start workers. Increase existing reverse-proxy request limits to 28 MiB for image posts; other API bodies retain their smaller application limits. No browser is needed for schedules or email workers.
 
 ## HTTPS reverse proxy
 

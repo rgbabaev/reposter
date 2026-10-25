@@ -128,8 +128,7 @@ export class EmailWorker {
         this.store.resolve("SMTP_DELIVERY");
       } catch (error) {
         const failure = smtpFailure(error);
-        const failed =
-          job.kind === "match" && (failure.permanent || attempts >= 10);
+        const failed = job.kind === "match" && failure.permanent;
         const delay = Math.min(3600, 15 * 2 ** Math.min(attempts - 1, 12));
         this.store.db.run(
           "UPDATE email_jobs SET status=?,next_attempt_at=?,last_error=? WHERE id=?",

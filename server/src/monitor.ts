@@ -8,6 +8,7 @@ import { matchesRule } from "./rules.js";
 export class Monitor {
   private timer?: ReturnType<typeof setInterval>;
   private running = new Set<string>();
+  private active = new Set<Promise<void>>();
   private due = new Map<string, number>();
   private stopped = true;
   private albums: Albums;
@@ -43,9 +44,10 @@ export class Monitor {
       ) {
         this.running.add(id);
         this.due.set(id, Date.now() + 15000);
-        void this.serial
+        const work = this.serial
           .run(id, () => this.catchUp(id))
           .catch((error) => {
+            if (this.stopped) return;
             const code =
               error instanceof ProviderError ? error.code : "MONITORING";
             this.store.incident(code, code + ":" + id);
@@ -53,11 +55,14 @@ export class Monitor {
           })
           .finally(() => {
             this.running.delete(id);
+            this.active.delete(work);
             if (!this.due.get(id)) this.due.set(id, Date.now() + 15000);
           });
+        this.active.add(work);
       }
   }
   async catchUp(externalId: string) {
+    if (this.stopped && this.timer) return;
     const sources = this.store
       .sources()
       .filter((s) => s.enabled && s.externalId === externalId);
@@ -87,6 +92,7 @@ export class Monitor {
         if (item.albumId) this.albums.stage(item);
       });
     }
+    if (this.stopped && this.timer) return;
     this.store.sourceError(externalId, null);
     for (const code of [
       "TELEGRAM_ACCESS",
@@ -187,5 +193,6 @@ export class Monitor {
     this.stopped = true;
     if (this.timer) clearInterval(this.timer);
     await this.serial.drain();
+    await Promise.allSettled(this.active);
   }
 }

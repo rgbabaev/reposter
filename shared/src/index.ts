@@ -144,3 +144,70 @@ export interface Dashboard {
 export interface ApiError {
   error: string;
 }
+
+export interface PostImage {
+  id: ID;
+  name: string;
+  mimeType: string;
+  size: number;
+}
+export interface Post {
+  id: ID;
+  ownerId: ID;
+  name: string;
+  text: string;
+  images: PostImage[];
+  createdAt: string;
+  updatedAt: string;
+}
+export interface PublicationDestination {
+  externalId: ID;
+  topicId?: ID;
+  name: string;
+  kind: "group" | "topic";
+}
+export interface CalendarSchedule {
+  frequency: "daily" | "weekly" | "monthly";
+  hour: number;
+  minute: number;
+  weekday?: number;
+  day?: number;
+}
+export interface Schedule {
+  id: ID;
+  ownerId: ID;
+  accountId: ID;
+  postId: ID;
+  name: string;
+  destination: PublicationDestination;
+  calendar: CalendarSchedule;
+  paused: boolean;
+  nextRunAt: string;
+  previousIds: ID[];
+  createdAt: string;
+  blockedRunId?: ID;
+}
+export interface PublicationRun {
+  id: ID;
+  accountId: ID;
+  scheduleId?: ID;
+  postId: ID;
+  postName: string;
+  destination: PublicationDestination;
+  status:
+    | "queued"
+    | "deleting"
+    | "publishing"
+    | "sent"
+    | "partial"
+    | "failed"
+    | "uncertain"
+    | "cancelled";
+  previousIds: ID[];
+  deletedIds: ID[];
+  sentIds: ID[];
+  createdAt: string;
+  startedAt?: string;
+  completedAt?: string;
+  error?: string;
+}

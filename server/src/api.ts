@@ -11,16 +11,24 @@ import type { Connector } from "./connector.js";
 import { Store } from "./store.js";
 import { Auth } from "./auth.js";
 import { HttpError, json, securityHeaders, body, pagination } from "./http.js";
+import { PublicationApi } from "./publication-api.js";
+import type { Publications } from "./publications.js";
+import type { Schedules } from "./schedules.js";
 export class Api {
   private auth: Auth;
+  private publicationApi?: PublicationApi;
   constructor(
     private config: Config,
     private store: Store,
     private connector?: Connector,
     private sources?: Sources,
     private email?: EmailWorker,
+    publications?: Publications,
+    schedules?: Schedules,
   ) {
     this.auth = new Auth(config, store);
+    if (publications && schedules)
+      this.publicationApi = new PublicationApi(publications, schedules);
   }
   async handle(req: IncomingMessage, res: ServerResponse) {
     securityHeaders(res);
@@ -42,6 +50,7 @@ export class Api {
         if (await this.auth.route(path, req, res)) return;
         this.auth.require(req);
         if (!["GET", "HEAD"].includes(req.method || "")) this.auth.origin(req);
+        if (await this.publicationApi?.route(url, req, res)) return;
         const { page, pageSize } = pagination(url);
         const slice = <T>(items: T[]) => ({
           items: items.slice((page - 1) * pageSize, page * pageSize),
@@ -235,7 +244,7 @@ export class Api {
         return;
       }
       if (error instanceof ProviderError) {
-        this.store.incident(error.code);
+        if (error.code !== "TELEGRAM_STOPPED") this.store.incident(error.code);
         json(res, 503, {
           error:
             error.code === "TELEGRAM_AUTH"

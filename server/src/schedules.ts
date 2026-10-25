@@ -1,0 +1,154 @@
+import { randomUUID } from "node:crypto";
+import type { Page, Schedule } from "@monitor/shared";
+import { nextOccurrence, validateCalendar } from "./calendar.js";
+import { HttpError } from "./http.js";
+import { Publications } from "./publications.js";
+import { Store, now } from "./store.js";
+
+export class Schedules {
+  private timer?: ReturnType<typeof setInterval>;
+  constructor(
+    private store: Store,
+    private publications: Publications,
+  ) {}
+  private map(row: Record<string, any>): Schedule {
+    const blocked = this.store.db.get(
+      "SELECT id FROM publication_runs WHERE schedule_id=? AND status IN ('queued','deleting','publishing','uncertain','failed')",
+      row.id,
+    );
+    return {
+      id: row.id,
+      ownerId: row.owner_id,
+      accountId: row.account_id,
+      postId: row.post_id,
+      name: row.name,
+      destination: JSON.parse(row.destination),
+      calendar: JSON.parse(row.calendar),
+      paused: !!row.paused,
+      nextRunAt: row.next_run_at,
+      previousIds: JSON.parse(row.previous_ids),
+      createdAt: row.created_at,
+      blockedRunId: blocked?.id,
+    };
+  }
+  get(id: string): Schedule {
+    const row = this.store.db.get("SELECT * FROM schedules WHERE id=?", id);
+    if (!row) throw new HttpError(404, "Schedule not found.");
+    return this.map(row);
+  }
+  list(page = 1, pageSize = 25): Page<Schedule> {
+    return {
+      items: this.store.db
+        .all(
+          "SELECT * FROM schedules ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?",
+          pageSize,
+          (page - 1) * pageSize,
+        )
+        .map((row) => this.map(row)),
+      total: Number(this.store.db.get("SELECT count(*) n FROM schedules")!.n),
+      page,
+      pageSize,
+    };
+  }
+  create(input: Record<string, unknown>): Schedule {
+    if (
+      typeof input.name !== "string" ||
+      !input.name.trim() ||
+      input.name.length > 120 ||
+      typeof input.postId !== "string"
+    )
+      throw new HttpError(
+        400,
+        "Provide a schedule name (1–120 characters) and a post.",
+      );
+    this.publications.posts.get(input.postId);
+    const destination = this.publications.destination(input.sourceId);
+    const calendar = validateCalendar(input.calendar);
+    const id = randomUUID();
+    this.store.db.run(
+      "INSERT INTO schedules(id,owner_id,post_id,name,destination,calendar,next_run_at,created_at) VALUES(?,?,?,?,?,?,?,?)",
+      id,
+      "owner",
+      input.postId,
+      input.name.trim(),
+      JSON.stringify(destination),
+      JSON.stringify(calendar),
+      nextOccurrence(calendar, new Date()),
+      now(),
+    );
+    return this.get(id);
+  }
+  pause(id: string, paused: unknown) {
+    this.get(id);
+    if (typeof paused !== "boolean")
+      throw new HttpError(400, "paused must be boolean.");
+    this.store.db.run(
+      "UPDATE schedules SET paused=? WHERE id=?",
+      Number(paused),
+      id,
+    );
+    if (!paused) this.tick();
+    return this.get(id);
+  }
+  private hasUnfinished(id: string) {
+    return !!this.store.db.get(
+      "SELECT id FROM publication_runs WHERE schedule_id=? AND status IN ('queued','deleting','publishing','uncertain','failed')",
+      id,
+    );
+  }
+  runNow(id: string) {
+    const run = this.store.db.transaction(() => {
+      const schedule = this.get(id);
+      if (this.hasUnfinished(id))
+        throw new HttpError(
+          409,
+          "This schedule has an unfinished run. Check publication history.",
+        );
+      return this.publications.queue(
+        schedule.postId,
+        schedule.destination,
+        id,
+        schedule.previousIds,
+        "manual",
+      );
+    });
+    this.publications.wake();
+    return run;
+  }
+  tick() {
+    if (!this.publications.connected()) return;
+    try {
+      for (const row of this.store.db.all(
+        "SELECT * FROM schedules WHERE paused=0 AND next_run_at<=? ORDER BY next_run_at,id",
+        now(),
+      )) {
+        if (this.hasUnfinished(row.id)) continue;
+        this.store.db.transaction(() => {
+          const schedule = this.get(row.id);
+          this.publications.queue(
+            schedule.postId,
+            schedule.destination,
+            schedule.id,
+            schedule.previousIds,
+            "scheduled",
+          );
+          this.store.db.run(
+            "UPDATE schedules SET next_run_at=? WHERE id=?",
+            nextOccurrence(schedule.calendar, new Date()),
+            schedule.id,
+          );
+        });
+      }
+      this.publications.wake();
+    } catch {
+      this.store.incident("SCHEDULING");
+    }
+  }
+  start() {
+    this.timer = setInterval(() => this.tick(), 1000);
+    this.tick();
+  }
+  stop() {
+    if (this.timer) clearInterval(this.timer);
+  }
+}

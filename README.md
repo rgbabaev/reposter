@@ -1,6 +1,6 @@
 # Personal Monitor
 
-Monitor Telegram chats and forum topics with text and attachment rules. Receive matching messages by email.
+Monitor Telegram chats and forum topics with text and attachment rules. Receive matches by email. Create reusable posts and schedule publication with replacement in groups and forum topics.
 
 ## Setup
 
@@ -25,6 +25,8 @@ npm start
 ```
 
 Open the configured `publicOrigin`, sign in, refresh sources, and add rules.
+
+Use **More → Posts** to create text/image posts and publish now. Use **More → Schedules** for recurring UTC publication. Review interrupted or uncertain sends in **Posts → Publication history** before retrying.
 
 ## Configuration
 

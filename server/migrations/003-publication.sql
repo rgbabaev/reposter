@@ -1,0 +1,11 @@
+CREATE TABLE posts (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES owners(id), name TEXT NOT NULL, text TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+CREATE TABLE post_images (id TEXT PRIMARY KEY, post_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE, ordinal INTEGER NOT NULL, mime_type TEXT NOT NULL, name TEXT NOT NULL, data BLOB NOT NULL);
+CREATE INDEX post_images_order ON post_images(post_id,ordinal);
+CREATE TABLE schedules (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES owners(id), post_id TEXT NOT NULL REFERENCES posts(id), name TEXT NOT NULL, destination TEXT NOT NULL, calendar TEXT NOT NULL, paused INTEGER NOT NULL DEFAULT 0, next_run_at TEXT NOT NULL, previous_ids TEXT NOT NULL DEFAULT '[]', created_at TEXT NOT NULL);
+CREATE TABLE publication_runs (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES owners(id), schedule_id TEXT REFERENCES schedules(id), post_id TEXT NOT NULL REFERENCES posts(id), snapshot TEXT NOT NULL, destination TEXT NOT NULL, status TEXT NOT NULL CHECK(status IN ('queued','deleting','publishing','sent','partial','failed','uncertain','cancelled')), previous_ids TEXT NOT NULL DEFAULT '[]', deleted_ids TEXT NOT NULL DEFAULT '[]', sent_ids TEXT NOT NULL DEFAULT '[]', random_ids TEXT NOT NULL, created_at TEXT NOT NULL, started_at TEXT, completed_at TEXT, error TEXT);
+CREATE INDEX publication_runs_ready ON publication_runs(status,created_at);
+CREATE INDEX publication_runs_schedule ON publication_runs(schedule_id,created_at);
+ALTER TABLE publication_runs ADD COLUMN trigger TEXT NOT NULL DEFAULT 'once' CHECK(trigger IN ('once','manual','scheduled'));
+ALTER TABLE publication_runs ADD COLUMN account_id TEXT NOT NULL DEFAULT 'telegram' REFERENCES accounts(id);
+ALTER TABLE schedules ADD COLUMN account_id TEXT NOT NULL DEFAULT 'telegram' REFERENCES accounts(id);
+CREATE UNIQUE INDEX publication_schedule_active ON publication_runs(schedule_id) WHERE schedule_id IS NOT NULL AND status IN ('queued','deleting','publishing','uncertain','failed');
