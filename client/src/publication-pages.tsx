@@ -135,10 +135,14 @@ function PostCard({
   );
 }
 export function DestinationSelect({
+  required = true,
+  placeholder = "Choose a group or forum topic",
   sources,
   value,
   onChange,
 }: {
+  required?: boolean;
+  placeholder?: string;
   sources: Source[];
   value: string;
   onChange: (value: string) => void;
@@ -147,11 +151,11 @@ export function DestinationSelect({
     <label class="field">
       Destination
       <select
-        required
+        required={required}
         value={value}
         onChange={(event) => onChange(event.currentTarget.value)}
       >
-        <option value="">Choose a group or forum topic</option>
+        <option value="">{placeholder}</option>
         {sources
           .filter(
             (source) => source.kind === "group" || source.kind === "topic",
@@ -381,7 +385,8 @@ function RunCard({
       {!!run.previousIds.length && (
         <p>
           Previous messages deleted: {run.deletedIds.length} /{" "}
-          {run.previousIds.length}
+          {run.previousIds.length} at{" "}
+          {run.previousDestination?.name || run.destination.name}
         </p>
       )}
       {run.error && (

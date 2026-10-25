@@ -26,13 +26,19 @@ export class Schedules {
       calendar: JSON.parse(row.calendar),
       paused: !!row.paused,
       nextRunAt: row.next_run_at,
+      previousDestination: row.previous_destination
+        ? JSON.parse(row.previous_destination)
+        : undefined,
       previousIds: JSON.parse(row.previous_ids),
       createdAt: row.created_at,
       blockedRunId: blocked?.id,
     };
   }
   get(id: string): Schedule {
-    const row = this.store.db.get("SELECT * FROM schedules WHERE id=?", id);
+    const row = this.store.db.get(
+      "SELECT * FROM schedules WHERE id=? AND deleted_at IS NULL",
+      id,
+    );
     if (!row) throw new HttpError(404, "Schedule not found.");
     return this.map(row);
   }
@@ -40,12 +46,16 @@ export class Schedules {
     return {
       items: this.store.db
         .all(
-          "SELECT * FROM schedules ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?",
+          "SELECT * FROM schedules WHERE deleted_at IS NULL ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?",
           pageSize,
           (page - 1) * pageSize,
         )
         .map((row) => this.map(row)),
-      total: Number(this.store.db.get("SELECT count(*) n FROM schedules")!.n),
+      total: Number(
+        this.store.db.get(
+          "SELECT count(*) n FROM schedules WHERE deleted_at IS NULL",
+        )!.n,
+      ),
       page,
       pageSize,
     };
@@ -77,6 +87,59 @@ export class Schedules {
       now(),
     );
     return this.get(id);
+  }
+  update(id: string, input: Record<string, unknown>): Schedule {
+    return this.store.db.transaction(() => {
+      const schedule = this.get(id);
+      this.requireEditable(id);
+      if (
+        typeof input.name !== "string" ||
+        !input.name.trim() ||
+        input.name.length > 120 ||
+        typeof input.postId !== "string"
+      )
+        throw new HttpError(
+          400,
+          "Provide a schedule name (1–120 characters) and a post.",
+        );
+      this.publications.posts.get(input.postId);
+      const destination =
+        input.sourceId === undefined
+          ? schedule.destination
+          : this.publications.destination(input.sourceId);
+      const calendar = validateCalendar(input.calendar);
+      const changed =
+        JSON.stringify(calendar) !==
+        JSON.stringify(validateCalendar(schedule.calendar));
+      this.store.db.run(
+        "UPDATE schedules SET name=?,post_id=?,destination=?,calendar=?,next_run_at=? WHERE id=?",
+        input.name.trim(),
+        input.postId,
+        JSON.stringify(destination),
+        JSON.stringify(calendar),
+        changed ? nextOccurrence(calendar, new Date()) : schedule.nextRunAt,
+        id,
+      );
+      return this.get(id);
+    });
+  }
+  remove(id: string) {
+    this.store.db.transaction(() => {
+      this.get(id);
+      this.requireEditable(id);
+      this.store.db.run(
+        "UPDATE schedules SET deleted_at=?,paused=1 WHERE id=?",
+        now(),
+        id,
+      );
+    });
+  }
+  private requireEditable(id: string) {
+    if (this.hasUnfinished(id))
+      throw new HttpError(
+        409,
+        "This schedule has an unfinished run. Check publication history to cancel, retry or review it.",
+      );
   }
   pause(id: string, paused: unknown) {
     this.get(id);
@@ -110,6 +173,7 @@ export class Schedules {
         id,
         schedule.previousIds,
         "manual",
+        schedule.previousDestination,
       );
     });
     this.publications.wake();
@@ -119,7 +183,7 @@ export class Schedules {
     if (!this.publications.connected()) return;
     try {
       for (const row of this.store.db.all(
-        "SELECT * FROM schedules WHERE paused=0 AND next_run_at<=? ORDER BY next_run_at,id",
+        "SELECT * FROM schedules WHERE deleted_at IS NULL AND paused=0 AND next_run_at<=? ORDER BY next_run_at,id",
         now(),
       )) {
         if (this.hasUnfinished(row.id)) continue;
@@ -131,6 +195,7 @@ export class Schedules {
             schedule.id,
             schedule.previousIds,
             "scheduled",
+            schedule.previousDestination,
           );
           this.store.db.run(
             "UPDATE schedules SET next_run_at=? WHERE id=?",

@@ -19,8 +19,14 @@ export const attachmentTypes: AttachmentType[] = [
 const normalize = (text: string) => text.normalize("NFC");
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 export function validateRule(input: Record<string, unknown>): RuleInput {
-  if (typeof input.sourceId !== "string" || !input.sourceId)
-    throw new HttpError(400, "A source is required.");
+  if (
+    !Array.isArray(input.sourceIds) ||
+    !input.sourceIds.every((id) => typeof id === "string" && id.length > 0) ||
+    new Set(input.sourceIds).size !== input.sourceIds.length
+  )
+    throw new HttpError(400, "Provide unique source IDs.");
+  if (input.enabled === true && !input.sourceIds.length)
+    throw new HttpError(400, "An enabled rule needs at least one source.");
   if (
     typeof input.name !== "string" ||
     !input.name.trim() ||
@@ -62,7 +68,7 @@ export function validateRule(input: Record<string, unknown>): RuleInput {
   )
     throw new HttpError(400, "Invalid attachment types.");
   return {
-    sourceId: input.sourceId,
+    sourceIds: input.sourceIds as string[],
     name: input.name.trim(),
     enabled: input.enabled,
     conditions,

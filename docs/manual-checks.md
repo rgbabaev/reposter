@@ -1,6 +1,6 @@
 # Manual checks
 
-Updated 2026-10-25. Tasks 01–11 and 13–15 implemented. Operator reports Release 1 acceptance checks passed except physical-phone testing and authorized Phase 2 with that check deferred. Publication, scheduled replacement, Pause/Resume and Run Now checks are operator-reported passed; full Phase 2 acceptance remains pending.
+Updated 2026-10-25. Tasks 01–11 and 13–17 implemented. Operator reports Release 1 acceptance checks passed except physical-phone testing and authorized Phase 2 with that check deferred. Publication, scheduled replacement, Pause/Resume and Run Now checks are operator-reported passed; full Phase 2 acceptance remains pending.
 
 ## Verified locally
 
@@ -70,3 +70,34 @@ The operator subsequently confirmed completing the requested schedule checks: ru
 - Verify time-triggered recurrence, schedule persistence after restart, paused restart behavior and one overdue run after downtime.
 - Restart during deletion/publication and verify uncertain-result review. Confirm failure incident emails through real SMTP.
 - Check new Posts/Schedules screens in desktop Safari and on a physical phone.
+
+## Tasks 16–17 local verification (2026-10-25)
+
+Disposable legacy/current SQLite databases and a simulated connector passed:
+
+- Migration 005 drops legacy rules while retaining sources, positions and historical match/email snapshots; foreign keys and unique assignments hold.
+- Shared rules survive restart, match two groups, ignore an unassigned group and appear once for forum/topic overlap. The snapshot prefers the matching topic. Independent source disable, assignment changes without replay, retained snapshots and disabling the last-source rule passed.
+- Schedule edits preserve pause state and recurring time unless recurrence changes. Queued, deleting, publishing, failed and uncertain runs block editing/deletion.
+- Destination changes delete tracked IDs at the original destination before publishing at the new destination. Confirmed deletion retains the post/history and remains inactive after restart.
+
+Shared-rule album recovery across restart produced one notification/email with the matching topic name. Failed replacement deletion followed by cancellation retained the original destination and remaining IDs; the next run deleted only those remaining IDs before publishing.
+
+Chromium with the real HTTP API passed at 390px and 320px: assigning disabled sources, saving shared rules, editing unassigned rules with no sources left, schedule name/destination/recurrence edits, preserving pause/recurring time and confirmed deletion. No overflow or page errors occurred.
+
+`npm run build`, `npm run check` and `git diff --check` passed on Node 24.22.1. No test suite, CI or dependencies were added. See the remaining operator checks below.
+
+## Operator checklist for this update
+
+Use controlled Telegram destinations. Stop the process and copy the data directory before upgrading. Migration 005 intentionally removes all existing rules; recreate them after restart.
+
+- [ ] Upgrade and confirm sources, positions, stored matches and email history remain; old rules are gone. Recreate required rules and restart to verify persistence.
+- [ ] Assign one rule to two groups. Send matching text to each and to an unassigned group: only the assigned groups produce notifications/emails. Confirm optional images and multiple matching rule names still work.
+- [ ] Assign that rule to both a forum and its topic. Send matching text and an album: each item produces one notification/email, the shared rule name appears once and the matching topic supplies the source name.
+- [ ] Edit conditions and disable the rule globally. Confirm both groups change together. Disable one source independently and confirm the other still matches. Re-enable without replaying the disabled period.
+- [ ] Add/remove assignments without replaying completed messages. Remove one assigned source, then the last: retain the rule elsewhere, then retain it disabled/unassigned. Reassign it. Historical notifications must stay unchanged.
+- [ ] Edit a paused schedule's name/post; verify pause state and next time survive restart. Change UTC recurrence and verify the next occurrence updates, including a month-end day.
+- [ ] Publish from a schedule, change its destination, restart, then run again. Verify every previous album ID is removed at the old destination and the replacement appears only at the new one. Repeat with a forum topic.
+- [ ] With a queued, running, failed or uncertain run, verify edit/delete is blocked and publication history offers the appropriate cancellation, retry or review. Resolve the run and retry the edit.
+- [ ] Cancel the schedule-deletion confirmation once, then accept it. Restart: no future runs occur, while the reusable post, existing Telegram messages and publication history remain.
+- [ ] Complete the remaining Phase 2 live matrix above: text/albums in groups/topics, timed recurrence, paused restart, one overdue run after downtime, interruption during deletion/publication and real incident-email delivery.
+- [ ] On desktop Safari and a physical phone, check shared-source selection (including disabled sources), unassigned rules, schedule editing/deletion, keyboard/focus, layout and login/logout. Physical-phone acceptance remains deferred until performed.

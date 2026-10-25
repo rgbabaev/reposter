@@ -26,6 +26,19 @@ export class PublicationApi {
       return true;
     }
     const schedule = path.match(/^\/api\/schedules\/([^/]+)(?:\/(run))?$/);
+    if (schedule && req.method === "GET" && !schedule[2]) {
+      json(res, 200, this.schedules.get(schedule[1]!));
+      return true;
+    }
+    if (schedule && req.method === "PUT" && !schedule[2]) {
+      json(res, 200, this.schedules.update(schedule[1]!, await body(req)));
+      return true;
+    }
+    if (schedule && req.method === "DELETE" && !schedule[2]) {
+      this.schedules.remove(schedule[1]!);
+      json(res, 200, { deleted: true });
+      return true;
+    }
     if (schedule && req.method === "PATCH" && !schedule[2]) {
       json(
         res,

@@ -1,6 +1,6 @@
 # Implementation Tasks
 
-Reference: `specification.md`. Implementation status and actual check results: [manual-checks.md](manual-checks.md). Tasks 01–11 and 13–15 are implemented. The operator reports Release 1 checks passed except physical-phone testing; desktop Safari passed, and the operator authorized proceeding with the phone check deferred. Live Phase 2 publication checks remain pending. Follow the order below. Each task states its completion check. Use manual checks; do not add an automated test suite or CI in Release 1.
+Reference: `specification.md`. Implementation status and actual check results: [manual-checks.md](manual-checks.md). Tasks 01–11 and 13–17 are implemented. The operator reports Release 1 checks passed except physical-phone testing; desktop Safari passed, and the operator authorized proceeding with the phone check deferred. Live Phase 2 publication checks remain pending. Follow the order below. Each task states its completion check. Use manual checks; do not add an automated test suite or CI in Release 1.
 
 ## Release 1: monitoring
 
@@ -49,7 +49,7 @@ Reference: `specification.md`. Implementation status and actual check results: [
 
 ### 07. Add rule evaluation
 
-- [x] Add rule CRUD and enable/disable APIs. Bind each rule to one source.
+- [x] Add rule CRUD and enable/disable APIs with the original single-source binding (replaced by multi-source assignments in task 17).
 - [x] Add normalized word-part, whole-word, phrase, hashtag, and attachment-type conditions.
 - [x] Require all conditions within a rule. Accept any matching rule. Record all matching rules on one notification.
 - [x] Combine album text and metadata. Persist incomplete album state and use one album identity.
@@ -119,6 +119,41 @@ Reference: `specification.md`. Implementation status and actual check results: [
 - [x] Stop replacement when deletion fails. Add activity records and email alerts.
 - Check: a run removes the previous post. Restart during deletion or publication does not blindly send another copy.
 - Live result: operator reports replacement removed the previous publication and all album images (2026-10-25). Interrupted-run checks remain pending.
+
+### 16. Add schedule editing and deletion
+
+- [x] Add Edit UI and API for schedule name, post, destination and UTC recurrence.
+- [x] Preserve pause state. Recompute the next occurrence when recurrence changes; name, post or destination changes must not shift it.
+- [x] When the destination changes, retain the previous destination and message IDs. The next run must delete that publication at its original destination before publishing to the new one.
+- [x] Add confirmed schedule deletion that stops future runs while retaining the reusable post, existing Telegram messages and publication history.
+- [x] Block editing or deletion while a run is queued, running, failed or uncertain; link to publication history for cancellation, retry or review. Serialize these actions with run creation.
+- Check: edits survive restart, recurrence changes update the next run, and paused schedules remain paused. Changing destinations removes the previous publication from the original destination. Deleted schedules never resume; their post, Telegram messages and run history remain available.
+
+### 17. Share monitoring rules across multiple sources
+
+- [x] Replace `rules.source_id` with a `rule_sources(rule_id, source_id)` relationship. Enforce unique assignments and foreign keys; index source-based lookup. Keep owner references on rules and validate that assigned sources belong to the same owner.
+- [x] Add a transactional schema upgrade that drops existing rules and creates the new rule/assignment structure without backfilling. Rules must be recreated manually. Preserve sources, processing positions and historical match/email snapshots; leave earlier migrations unchanged.
+- [x] Replace shared/API `sourceId` with `sourceIds`. Validate unique, existing source IDs; require at least one source for an enabled rule. Save rule fields and assignments atomically; update server and client together.
+- [x] Evaluate a rule once when any assignment belongs to an eligible enabled source. Keep all-conditions/any-rule semantics, album identity and one notification/email job per item. Deduplicate shared rules across forum/topic overlap; derive the source snapshot from the incoming source and matched assignments, preferring a matching topic over the whole forum.
+- [x] Remove only assignments when a source is removed. Preserve rules attached elsewhere; disable and retain a rule as unassigned when its last source is removed. Source disable must not disable a shared rule for other sources.
+- [x] Add a labelled source checklist with selected count to the rule editor. Show assigned sources and unassigned state in rule lists. Make global edits/disable behavior clear and allow selecting disabled sources for later use.
+- [x] Verify the upgrade removes old rules without changing other data, and newly created shared rules survive restart. Check assignment add/remove, global rule edits, independent source disable and last-source removal. Confirm one shared rule matches in two groups, ignores an unassigned group, and produces one notification with its name once for forum/topic overlap. Confirm assignment changes do not replay completed messages and historical snapshots remain unchanged.
+
+Local verification for tasks 16–17 passed with disposable legacy/current databases, a simulated connector and Chromium. Live acceptance remains listed in [manual-checks.md](manual-checks.md).
+
+### 18. Add post formatting and image ordering
+
+- [ ] Add Telegram-supported text formatting controls to the post editor and preserve formatting through saving, reopening and publication, including image captions.
+- [ ] Allow reordering attached images with mobile and keyboard controls. Persist the chosen order and use it when publishing albums.
+- [ ] Preserve formatting and image order in publication-run snapshots so retries use the original post version.
+- Check: save and reopen a formatted post with reordered images, then publish to a group and forum topic. Verify formatting, captions and album order in Telegram, including scheduled publication and retries.
+
+### 19. Replace entity names with property-based headings
+
+- [ ] Remove the `name` field from schedules, posts and rules in storage, shared contracts, API validation and UI forms. Migrate existing data without losing entity relationships or publication state.
+- [ ] Compose UI headings from entity properties: post text or attachment summary; rule conditions; schedule post, destination and recurrence. Provide useful headings for empty text and unassigned rules.
+- [ ] Use derived headings wherever these entities are referenced, including selectors, details, confirmations and new notification/publication snapshots. Preserve historical snapshots.
+- Check: create, edit and reopen each entity without a name. Verify headings reflect property changes across the UI, migration preserves existing entities and relationships, and monitoring and scheduled publication still work.
 
 ## Later work: ordered backlog
 

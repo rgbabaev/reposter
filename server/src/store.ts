@@ -10,6 +10,7 @@ import type {
   Page,
   DiscoveredSource,
 } from "@monitor/shared";
+import { HttpError } from "./http.js";
 import { Storage } from "./db.js";
 export const now = () => new Date().toISOString();
 export class Store {
@@ -73,7 +74,9 @@ export class Store {
     });
   }
   removeSource(id: string) {
-    this.db.run("DELETE FROM sources WHERE id=?", id);
+    this.db.transaction(() =>
+      this.db.run("DELETE FROM sources WHERE id=?", id),
+    );
   }
   sourceError(externalId: string, code: string | null) {
     this.db.run(
@@ -86,7 +89,12 @@ export class Store {
     return this.db.all("SELECT * FROM rules ORDER BY created_at").map((r) => ({
       id: r.id,
       ownerId: r.owner_id,
-      sourceId: r.source_id,
+      sourceIds: this.db
+        .all(
+          "SELECT source_id FROM rule_sources WHERE rule_id=? ORDER BY source_id",
+          r.id,
+        )
+        .map((s) => s.source_id),
       name: r.name,
       enabled: !!r.enabled,
       conditions: JSON.parse(r.conditions),
@@ -95,18 +103,39 @@ export class Store {
     }));
   }
   saveRule(input: RuleInput, id: string = randomUUID()): Rule {
-    const created = this.rules().find((r) => r.id === id)?.createdAt || now();
-    this.db.run(
-      "INSERT INTO rules VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET source_id=excluded.source_id,name=excluded.name,enabled=excluded.enabled,conditions=excluded.conditions,attachment_types=excluded.attachment_types",
-      id,
-      "owner",
-      input.sourceId,
-      input.name,
-      Number(input.enabled),
-      JSON.stringify(input.conditions),
-      JSON.stringify(input.attachmentTypes),
-      created,
-    );
+    this.db.transaction(() => {
+      if (input.enabled && !input.sourceIds.length)
+        throw new HttpError(400, "An enabled rule needs at least one source.");
+      if (
+        new Set(input.sourceIds).size !== input.sourceIds.length ||
+        input.sourceIds.some(
+          (sourceId) => this.source(sourceId)?.ownerId !== "owner",
+        )
+      )
+        throw new HttpError(
+          400,
+          "Select unique existing sources belonging to this owner.",
+        );
+      const created = this.rules().find((r) => r.id === id)?.createdAt || now();
+      this.db.run(
+        "INSERT INTO rules VALUES(?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,conditions=excluded.conditions,attachment_types=excluded.attachment_types",
+        id,
+        "owner",
+        input.name,
+        Number(input.enabled),
+        JSON.stringify(input.conditions),
+        JSON.stringify(input.attachmentTypes),
+        created,
+      );
+      this.db.run("DELETE FROM rule_sources WHERE rule_id=?", id);
+      for (const sourceId of input.sourceIds)
+        this.db.run("INSERT INTO rule_sources VALUES(?,?)", id, sourceId);
+      this.db.run(
+        "UPDATE rules SET enabled=? WHERE id=?",
+        Number(input.enabled),
+        id,
+      );
+    });
     return this.rules().find((r) => r.id === id)!;
   }
   removeRule(id: string) {
@@ -137,8 +166,19 @@ export class Store {
             externalSourceId: item.externalSourceId,
             identity: item.identity,
             sourceName:
-              sources.find((s) => s.id === matching[0]!.sourceId)?.name ||
-              "Unavailable",
+              sources
+                .filter(
+                  (s) =>
+                    s.enabled &&
+                    s.accountId === item.accountId &&
+                    s.externalId === item.externalSourceId &&
+                    (!s.topicId || s.topicId === item.topicId) &&
+                    BigInt(item.startPosition || item.position) >
+                      BigInt(s.position) &&
+                    matching.some((rule) => rule.sourceIds.includes(s.id)),
+                )
+                .sort((a, b) => Number(!!b.topicId) - Number(!!a.topicId))[0]
+                ?.name || "Unavailable",
             sender: item.sender,
             text: item.text,
             url: item.url,

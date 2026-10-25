@@ -162,7 +162,12 @@ export class Monitor {
             boundary = item.position;
           const current = this.store
             .sources()
-            .filter((s) => s.enabled && s.externalId === externalId);
+            .filter(
+              (s) =>
+                s.enabled &&
+                s.accountId === item.accountId &&
+                s.externalId === externalId,
+            );
           const eligible = current.filter(
             (s) =>
               BigInt(item.startPosition || item.position) >
@@ -173,8 +178,9 @@ export class Monitor {
             .rules()
             .filter(
               (r) =>
-                eligible.some((s) => s.id === r.sourceId) &&
-                matchesRule(r, item),
+                eligible.some(
+                  (s) => s.ownerId === r.ownerId && r.sourceIds.includes(s.id),
+                ) && matchesRule(r, item),
             );
           plans.push({ item, sources: current, matching: rules });
         }

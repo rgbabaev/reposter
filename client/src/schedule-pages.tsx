@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import type {
   CalendarSchedule,
   Page,
@@ -136,6 +136,29 @@ function ScheduleCard({
         >
           Run Now
         </button>
+        {!schedule.blockedRunId && (
+          <Link class="button" href={`/schedules/${schedule.id}/edit`}>
+            Edit schedule
+          </Link>
+        )}
+        <button
+          type="button"
+          disabled={action.busy || !!schedule.blockedRunId}
+          onClick={() => {
+            if (
+              !confirm(
+                "Delete this schedule? Future runs stop. The post, Telegram messages and publication history are retained.",
+              )
+            )
+              return;
+            void action.run(async () => {
+              await api(`/schedules/${schedule.id}`, { method: "DELETE" });
+              refresh();
+            });
+          }}
+        >
+          Delete schedule
+        </button>
         <Link class="button" href={`/posts/${schedule.postId}/edit`}>
           Edit post
         </Link>
@@ -146,7 +169,8 @@ function ScheduleCard({
     </article>
   );
 }
-export function ScheduleEditorPage() {
+export function ScheduleEditorPage({ id }: { id?: string }) {
+  const remote = useRemote<Schedule>(id ? `/schedules/${id}` : null);
   const action = useAction();
   const [name, setName] = useState("");
   const [postPage, setPostPage] = useState(1);
@@ -159,26 +183,57 @@ export function ScheduleEditorPage() {
   const [time, setTime] = useState("09:00");
   const [weekday, setWeekday] = useState(1);
   const [day, setDay] = useState(1);
+  useEffect(() => {
+    if (!remote.data) return;
+    const schedule = remote.data;
+    setName(schedule.name);
+    setPostId(schedule.postId);
+    setFrequency(schedule.calendar.frequency);
+    setTime(
+      `${String(schedule.calendar.hour).padStart(2, "0")}:${String(schedule.calendar.minute).padStart(2, "0")}`,
+    );
+    setWeekday(schedule.calendar.weekday ?? 1);
+    setDay(schedule.calendar.day ?? 1);
+  }, [remote.data]);
+  const assignedSource = sources.data?.items.find(
+    (source) =>
+      source.externalId === remote.data?.destination.externalId &&
+      source.topicId === remote.data?.destination.topicId,
+  );
+  if (id && remote.loading) return <Loading />;
+  if (id && !remote.data)
+    return <ErrorNotice message={remote.error || "Schedule not found."} />;
   return (
     <>
       <PageHeading
-        title="New schedule"
+        title={id ? "Edit schedule" : "New schedule"}
         description="One reusable post and one group or forum topic."
       />
-      <ErrorNotice message={action.error || posts.error || sources.error} />
+      <ErrorNotice
+        message={action.error || remote.error || posts.error || sources.error}
+      />
       {(posts.loading || sources.loading) && <Loading />}
+      {remote.data?.blockedRunId && (
+        <p>
+          A run is unfinished.{" "}
+          <Link href="/publications">
+            Cancel, retry or review it in publication history
+          </Link>{" "}
+          before editing.
+        </p>
+      )}
       <form
         class="card"
         onSubmit={(event) => {
           event.preventDefault();
           void action.run(async () => {
             const [hour, minute] = time.split(":").map(Number);
-            await api("/schedules", {
-              method: "POST",
+            await api(id ? `/schedules/${id}` : "/schedules", {
+              method: id ? "PUT" : "POST",
               body: {
                 name,
                 postId,
-                sourceId,
+                ...(sourceId ? { sourceId } : {}),
                 calendar: {
                   frequency,
                   hour,
@@ -209,6 +264,10 @@ export function ScheduleEditorPage() {
             onChange={(event) => setPostId(event.currentTarget.value)}
           >
             <option value="">Choose a post</option>
+            {postId &&
+              !posts.data?.items.some((post) => post.id === postId) && (
+                <option value={postId}>Current post (outside this page)</option>
+              )}
             {posts.data?.items.map((post) => (
               <option key={post.id} value={post.id}>
                 {post.name}
@@ -225,9 +284,19 @@ export function ScheduleEditorPage() {
             }}
           />
         )}
+        {id && (
+          <p>
+            The previous publication is deleted at its original destination on
+            the next run, even when the destination changes.
+          </p>
+        )}
         <DestinationSelect
+          required={!id}
+          placeholder={
+            id && !assignedSource ? remote.data?.destination.name : undefined
+          }
           sources={sources.data?.items || []}
-          value={sourceId}
+          value={sourceId || assignedSource?.id || ""}
           onChange={setSourceId}
         />
         <label class="field">
@@ -291,9 +360,14 @@ export function ScheduleEditorPage() {
         <div class="actions">
           <button
             class="primary"
-            disabled={action.busy || !postId || !sourceId}
+            disabled={
+              action.busy ||
+              !postId ||
+              (!id && !sourceId) ||
+              !!remote.data?.blockedRunId
+            }
           >
-            Create schedule
+            {id ? "Save schedule" : "Create schedule"}
           </button>
           <Link class="button" href="/schedules">
             Cancel

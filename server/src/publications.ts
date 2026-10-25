@@ -72,6 +72,9 @@ export class Publications {
       postName: (JSON.parse(row.snapshot) as Post).name,
       destination: JSON.parse(row.destination),
       status: row.status,
+      previousDestination: row.previous_destination
+        ? JSON.parse(row.previous_destination)
+        : undefined,
       previousIds: JSON.parse(row.previous_ids),
       deletedIds: JSON.parse(row.deleted_ids),
       sentIds: JSON.parse(row.sent_ids),
@@ -90,6 +93,7 @@ export class Publications {
     scheduleId?: string,
     previousIds: string[] = [],
     trigger = "once",
+    previousDestination?: PublicationDestination,
   ): PublicationRun {
     if (typeof postId !== "string")
       throw new HttpError(400, "A post is required.");
@@ -105,7 +109,7 @@ export class Publications {
       () => randomBytes(8).readBigInt64LE().toString(),
     );
     this.store.db.run(
-      "INSERT INTO publication_runs(id,owner_id,schedule_id,post_id,snapshot,destination,status,previous_ids,random_ids,created_at,trigger) VALUES(?,?,?,?,?,?,'queued',?,?,?,?)",
+      "INSERT INTO publication_runs(id,owner_id,schedule_id,post_id,snapshot,destination,status,previous_ids,random_ids,created_at,trigger,previous_destination) VALUES(?,?,?,?,?,?,'queued',?,?,?,?,?)",
       id,
       "owner",
       scheduleId || null,
@@ -116,6 +120,7 @@ export class Publications {
       JSON.stringify(randomIds),
       now(),
       trigger,
+      JSON.stringify(previousDestination || destination),
     );
     return this.get(id);
   }
@@ -148,12 +153,13 @@ export class Publications {
       );
       if (run.scheduleId)
         this.store.db.run(
-          "UPDATE schedules SET previous_ids=? WHERE id=?",
+          "UPDATE schedules SET previous_ids=?,previous_destination=? WHERE id=?",
           JSON.stringify(
             run.previousIds.filter(
               (messageId) => !run.deletedIds.includes(messageId),
             ),
           ),
+          JSON.stringify(run.previousDestination || run.destination),
           run.scheduleId,
         );
     });
@@ -250,8 +256,9 @@ export class Publications {
       );
       if (row.schedule_id)
         this.store.db.run(
-          "UPDATE schedules SET previous_ids=? WHERE id=?",
+          "UPDATE schedules SET previous_ids=?,previous_destination=? WHERE id=?",
           JSON.stringify(ids),
+          row.destination,
           row.schedule_id,
         );
       if (
@@ -306,7 +313,7 @@ export class Publications {
   private async pump() {
     while (!this.stopped && this.connector.status().state === "connected") {
       const row = this.store.db.get(
-        "SELECT r.* FROM publication_runs r LEFT JOIN schedules s ON s.id=r.schedule_id WHERE r.status IN ('queued','deleting') AND (r.schedule_id IS NULL OR r.trigger='manual' OR s.paused=0) ORDER BY r.created_at,r.id LIMIT 1",
+        "SELECT r.* FROM publication_runs r LEFT JOIN schedules s ON s.id=r.schedule_id WHERE r.status IN ('queued','deleting') AND (r.schedule_id IS NULL OR r.trigger='manual' OR (s.paused=0 AND s.deleted_at IS NULL)) ORDER BY r.created_at,r.id LIMIT 1",
       );
       if (!row) return;
       let preparing = false;
@@ -323,7 +330,10 @@ export class Publications {
           if (deleted.has(messageId)) continue;
           if (!this.connector.deletePublication)
             throw new ProviderError("PUBLICATION_DELETE");
-          await this.connector.deletePublication(run.destination, [messageId]);
+          await this.connector.deletePublication(
+            run.previousDestination || run.destination,
+            [messageId],
+          );
           deleted.add(messageId);
           this.store.db.run(
             "UPDATE publication_runs SET deleted_ids=? WHERE id=?",

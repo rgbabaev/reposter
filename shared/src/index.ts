@@ -57,7 +57,7 @@ export interface TextCondition {
   value: string;
 }
 export interface RuleInput {
-  sourceId: ID;
+  sourceIds: ID[];
   name: string;
   enabled: boolean;
   conditions: TextCondition[];
@@ -183,6 +183,7 @@ export interface Schedule {
   calendar: CalendarSchedule;
   paused: boolean;
   nextRunAt: string;
+  previousDestination?: PublicationDestination;
   previousIds: ID[];
   createdAt: string;
   blockedRunId?: ID;
@@ -203,6 +204,7 @@ export interface PublicationRun {
     | "failed"
     | "uncertain"
     | "cancelled";
+  previousDestination?: PublicationDestination;
   previousIds: ID[];
   deletedIds: ID[];
   sentIds: ID[];

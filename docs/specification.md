@@ -52,7 +52,11 @@ Ignore message edits and deletion events. Inspect message text and captions. Rea
 
 ## 5. Rules and matches
 
-Each rule belongs to one source. A source can have several rules. Each rule has a name, enabled state, text conditions, and an optional attachment-type condition.
+Rules are reusable across sources. A rule can be assigned to several sources, and each source can have several rules. Each rule has one name, enabled state, set of text conditions, and optional attachment-type condition shared by all its assignments. Editing or disabling a rule affects every assigned source. Source enable/disable remains independent; disabled sources do not match even when their rules are enabled.
+
+An enabled rule must have at least one assigned source. Removing a source removes its assignments while preserving rules and stored matches. If a rule loses its last source, retain it as disabled and unassigned so it can be reassigned. Changing assignments does not reset source positions or reprocess completed items; recovery continues to use assignments and rules active at processing time. Evaluate a shared rule once per item even when both a forum and its topic are assigned.
+
+During this development-stage upgrade, drop existing rules and create the new rule/assignment structure without backfilling old rules. Rules must be recreated manually. Preserve sources, processing positions and historical match/email snapshots. See [ADR 0007](adr/0007-shared-monitoring-rules.md). Migration 005 implements this change; recreate rules after upgrading.
 
 All conditions in one rule must pass. Any enabled rule can produce a match. Do not provide nested logic, explicit OR groups, NOT conditions, regular expressions, or AI in Release 1.
 
@@ -108,7 +112,11 @@ Support a regular Node.js process and an optional container. Store the database 
 
 Create a reusable post in the UI with plain text and uploaded images. Publish from the personal account to one group or forum topic per schedule. Import from existing Telegram messages is later work.
 
+Planned in task 18: add Telegram-supported text formatting and attached-image ordering in the post editor. Preserve formatting and image order when saving, reopening and publishing posts, including captions, schedules and retry snapshots.
+
 Support daily, weekly, and monthly calendar schedules in UTC. Repeat one post. Clamp an unavailable monthly day to the month's last day. Preserve the original day for later months. Provide Pause, Resume, and Run Now. Run Now must not shift the recurring schedule.
+
+Schedules support editing their name, post, destination and UTC recurrence. Preserve pause state; recompute the next run only when recurrence changes. Retain previous message IDs and their original destination when changing destinations. Confirm schedule deletion; stop future runs while retaining its post, Telegram messages and publication history. Block edits and deletion while a run is queued, running, failed or uncertain; resolve it through publication history first. Serialize these actions with run creation.
 
 Before publication, delete the previous publication from that schedule. Delete only system-created messages. Store every sent message ID, including album items. If deletion fails, stop that run and report the error. Treat an already deleted message as success.
 

@@ -355,7 +355,7 @@ export function RulesPage() {
     <>
       <PageHeading
         title="Rules"
-        description="All text conditions in one rule must match. Any enabled rule can create a notification."
+        description="Rules are shared across their assigned sources. Edits and disabling apply everywhere. All text conditions must match."
         action={
           <Link href="/rules/new" class="button primary">
             Add rule
@@ -384,8 +384,15 @@ export function RulesPage() {
                   <div>
                     <h2>{rule.name}</h2>
                     <p class="muted">
-                      {sources.data?.items.find((s) => s.id === rule.sourceId)
-                        ?.name || "Loading source…"}
+                      {rule.sourceIds.length
+                        ? rule.sourceIds
+                            .map(
+                              (id) =>
+                                sources.data?.items.find((s) => s.id === id)
+                                  ?.name || "Loading source…",
+                            )
+                            .join(", ")
+                        : "Unassigned"}
                     </p>
                   </div>
                   <span class={"badge " + (rule.enabled ? "good" : "neutral")}>
@@ -479,7 +486,7 @@ export function RuleEditorPage({ id }: { id?: string }) {
       />
       {sources.loading || (id && remote.loading) ? (
         <Loading />
-      ) : sources.data?.items.length ? (
+      ) : sources.data && (sources.data.items.length || rule) ? (
         id && !rule ? (
           <Empty title="Rule not found">
             Return to Rules to choose an existing rule.
@@ -507,17 +514,16 @@ function RuleForm({ initial, sources }: { initial?: Rule; sources: Source[] }) {
   const [draft, setDraft] = useState<RuleInput>(() =>
     initial
       ? {
-          sourceId: initial.sourceId,
+          sourceIds: [...initial.sourceIds],
           name: initial.name,
           enabled: initial.enabled,
           conditions: initial.conditions.map((c) => ({ ...c })),
           attachmentTypes: [...initial.attachmentTypes],
         }
       : {
-          sourceId:
-            sources.find((s) => s.id === preferred)?.id ||
-            sources.find((s) => s.enabled)?.id ||
-            sources[0]!.id,
+          sourceIds: sources
+            .filter((source) => source.id === preferred)
+            .map((source) => source.id),
           name: "",
           enabled: true,
           conditions: [{ kind: "part", value: "" }],
@@ -569,33 +575,31 @@ function RuleForm({ initial, sources }: { initial?: Rule; sources: Source[] }) {
           autoComplete="off"
         />
       </label>
-      <label class="field">
-        Source
-        <select
-          required
-          value={draft.sourceId}
-          onChange={(event) =>
-            setDraft({ ...draft, sourceId: event.currentTarget.value })
-          }
-        >
-          {sources.map((source) => (
-            <option value={source.id} key={source.id}>
-              {source.name}
-              {source.enabled ? "" : " (disabled)"}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label class="check">
-        <input
-          type="checkbox"
-          checked={draft.enabled}
-          onChange={(event) =>
-            setDraft({ ...draft, enabled: event.currentTarget.checked })
-          }
-        />
-        Enable this rule
-      </label>
+      <fieldset>
+        <legend>Sources ({draft.sourceIds.length} selected)</legend>
+        <p>
+          Edits and enabling or disabling this rule apply to every assigned
+          source.
+        </p>
+        {sources.map((source) => (
+          <label class="check" key={source.id}>
+            <input
+              type="checkbox"
+              checked={draft.sourceIds.includes(source.id)}
+              onChange={(event) =>
+                setDraft({
+                  ...draft,
+                  sourceIds: event.currentTarget.checked
+                    ? [...draft.sourceIds, source.id]
+                    : draft.sourceIds.filter((id) => id !== source.id),
+                })
+              }
+            />
+            {source.name}
+            {source.enabled ? "" : " (disabled)"}
+          </label>
+        ))}
+      </fieldset>
       <fieldset>
         <legend>Text conditions</legend>
         <p class="muted">
@@ -1212,8 +1216,20 @@ export function MorePage() {
     <>
       <PageHeading title="More" />
       <nav class="card menu" aria-label="More pages">
-        <Link href="/posts"><span><strong>Posts</strong><small>Create and publish text and images</small></span><span aria-hidden="true">›</span></Link>
-        <Link href="/schedules"><span><strong>Schedules</strong><small>Recurring publications in UTC</small></span><span aria-hidden="true">›</span></Link>
+        <Link href="/posts">
+          <span>
+            <strong>Posts</strong>
+            <small>Create and publish text and images</small>
+          </span>
+          <span aria-hidden="true">›</span>
+        </Link>
+        <Link href="/schedules">
+          <span>
+            <strong>Schedules</strong>
+            <small>Recurring publications in UTC</small>
+          </span>
+          <span aria-hidden="true">›</span>
+        </Link>
         <Link href="/connectors">
           <span>
             <strong>Connectors</strong>

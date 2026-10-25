@@ -124,6 +124,8 @@ function Workspace({ onLogout }: { onLogout: () => void }) {
   else if (path === "/publications") page = <PublicationsPage />;
   else if (path === "/schedules") page = <SchedulesPage />;
   else if (path === "/schedules/new") page = <ScheduleEditorPage />;
+  else if (/^\/schedules\/[^/]+\/edit$/.test(path))
+    page = <ScheduleEditorPage key={path} id={path.split("/")[2]} />;
   else
     page = (
       <>

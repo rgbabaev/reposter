@@ -113,8 +113,7 @@ export class Api {
           (ruleRoute && req.method === "PUT")
         ) {
           const input = validateRule(await body(req));
-          if (!this.store.source(input.sourceId))
-            throw new HttpError(400, "Selected source not found.");
+
           if (
             ruleRoute &&
             !this.store.rules().some((r) => r.id === ruleRoute[1])
