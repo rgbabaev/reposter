@@ -26,12 +26,11 @@ type DraftImage =
 export function PostsPage() {
   const [page, setPage] = useState(1);
   const remote = useRemote<Page<Post>>(`/posts?page=${page}`, true);
-  const sources = useRemote<Page<Source>>("/sources?pageSize=100");
   return (
     <>
       <PageHeading
         title="Posts"
-        description="Reusable text and image posts."
+        description="Reusable content. Choose destinations and publishing times in Schedules."
         action={
           <Link class="button primary" href="/posts/new">
             New post
@@ -39,23 +38,18 @@ export function PostsPage() {
         }
       />
       <ErrorNotice message={remote.error} onRetry={remote.refresh} />
-      <ErrorNotice message={sources.error} onRetry={sources.refresh} />
       {remote.loading && <Loading />}
       {remote.data && (
         <>
           {!remote.data.items.length && (
             <Empty title="No posts yet">
-              Create a post to publish now or use in a schedule.
+              Create a post, then use a schedule to choose where and when to
+              publish it.
             </Empty>
           )}
           <div class="stack">
             {remote.data.items.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                sources={sources.data?.items || []}
-                refresh={remote.refresh}
-              />
+              <PostCard key={post.id} post={post} refresh={remote.refresh} />
             ))}
           </div>
           <Pager data={remote.data} onPage={setPage} />
@@ -67,18 +61,8 @@ export function PostsPage() {
     </>
   );
 }
-function PostCard({
-  post,
-  sources,
-  refresh,
-}: {
-  post: Post;
-  sources: Source[];
-  refresh: () => void;
-}) {
+function PostCard({ post, refresh }: { post: Post; refresh: () => void }) {
   const action = useAction();
-  const [sourceId, setSourceId] = useState("");
-  const [queued, setQueued] = useState(false);
   return (
     <article class="card">
       <h2>{postHeading(post)}</h2>
@@ -87,6 +71,12 @@ function PostCard({
       <p class="muted">Updated {utc(post.updatedAt)}</p>
       <ErrorNotice message={action.error} />
       <div class="actions">
+        <Link
+          class="button"
+          href={`/schedules/new?post=${encodeURIComponent(post.id)}`}
+        >
+          Create schedule
+        </Link>
         <Link class="button" href={`/posts/${post.id}/edit`}>
           Edit post
         </Link>
@@ -108,32 +98,6 @@ function PostCard({
           Delete post
         </button>
       </div>
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          void action.run(async () => {
-            await api("/publications", {
-              method: "POST",
-              body: { postId: post.id, sourceId },
-            });
-            setQueued(true);
-          });
-        }}
-      >
-        <DestinationSelect
-          sources={sources}
-          value={sourceId}
-          onChange={setSourceId}
-        />
-        <button class="primary" disabled={action.busy || !sourceId}>
-          Publish now
-        </button>
-        {queued && (
-          <p role="status">
-            Publication queued. <Link href="/publications">View progress</Link>
-          </p>
-        )}
-      </form>
     </article>
   );
 }

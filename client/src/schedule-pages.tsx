@@ -176,7 +176,9 @@ export function ScheduleEditorPage({ id }: { id?: string }) {
   const [postPage, setPostPage] = useState(1);
   const posts = useRemote<Page<Post>>(`/posts?page=${postPage}&pageSize=100`);
   const sources = useRemote<Page<Source>>("/sources?pageSize=100");
-  const [postId, setPostId] = useState("");
+  const [postId, setPostId] = useState(() =>
+    id ? "" : new URLSearchParams(location.search).get("post") || "",
+  );
   const [sourceId, setSourceId] = useState("");
   const [frequency, setFrequency] =
     useState<CalendarSchedule["frequency"]>("daily");

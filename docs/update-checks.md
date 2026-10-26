@@ -16,6 +16,7 @@ The WYSIWYG update passed Chromium/WebKit editing, touch, keyboard, paste, limit
 ## Upgrade and headings
 
 - [ ] Upgrade an existing database. Confirm posts, images, rules, assignments, schedules, previous publication IDs, matches and email/publication history remain. Restart and check again.
+- [ ] From Posts, choose Create schedule: confirm the post is preselected and choose the destination there. Use schedule Run Now for immediate publication.
 - [ ] Create/edit/reopen a post, rule and schedule without a name. Check headings in lists, post selectors, confirmations and publication history. Check image-only posts and disabled/unassigned rules.
 - [ ] Change post text and rule conditions: current headings update, while earlier match/email/publication snapshots retain their original labels and content. New notifications and publications use derived headings.
 

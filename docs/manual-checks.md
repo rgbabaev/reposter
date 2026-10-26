@@ -1,6 +1,6 @@
 # Manual checks
 
-Updated 2026-10-25. Tasks 01–11 and 13–20 implemented. Operator reports Release 1 acceptance checks passed except physical-phone testing and authorized Phase 2 with that check deferred. Publication, scheduled replacement, Pause/Resume and Run Now checks are operator-reported passed; full Phase 2 acceptance remains pending.
+Updated 2026-10-25. Tasks 01–11 and 13–21 implemented. Operator reports Release 1 acceptance checks passed except physical-phone testing and authorized Phase 2 with that check deferred. Publication, scheduled replacement, Pause/Resume and Run Now checks are operator-reported passed; full Phase 2 acceptance remains pending.
 
 ## Verified locally
 
@@ -109,3 +109,7 @@ See [update-checks.md](update-checks.md) for local verification and the current 
 ## WYSIWYG editor (2026-10-26)
 
 Production build, type and whitespace checks passed. Disposable browser checks in Chromium and WebKit passed visible formatting, all styles, link editing/validation, style toggles while typing, shortcuts, undo/redo, save/reopen, touch controls, 320/390px layouts and 44px targets. Additional checks passed deletion to empty, simulated IME input, emoji, plain-text paste, HTML isolation, character limits and consecutive/trailing newlines. Deterministic model checks preserved text and valid Telegram nesting; existing migration/retry snapshot smoke checks passed. No live messages were sent or test suite added. Physical-phone keyboard and Telegram checks remain in [update-checks.md](update-checks.md).
+
+## Post destinations (2026-10-26)
+
+Posts now links to schedule creation instead of presenting a destination/direct-publication form. Chromium and WebKit passed post preselection, saved schedule destination, ordinary creation/editing and 390/320px layouts. Posts no longer fetches sources. Build, type and whitespace checks passed.
