@@ -27,12 +27,6 @@ export function validateRule(input: Record<string, unknown>): RuleInput {
     throw new HttpError(400, "Provide unique source IDs.");
   if (input.enabled === true && !input.sourceIds.length)
     throw new HttpError(400, "An enabled rule needs at least one source.");
-  if (
-    typeof input.name !== "string" ||
-    !input.name.trim() ||
-    input.name.length > 120
-  )
-    throw new HttpError(400, "Rule name must contain 1–120 characters.");
   if (typeof input.enabled !== "boolean")
     throw new HttpError(400, "enabled must be boolean.");
   if (
@@ -69,7 +63,6 @@ export function validateRule(input: Record<string, unknown>): RuleInput {
     throw new HttpError(400, "Invalid attachment types.");
   return {
     sourceIds: input.sourceIds as string[],
-    name: input.name.trim(),
     enabled: input.enabled,
     conditions,
     attachmentTypes: [...new Set(input.attachmentTypes)] as AttachmentType[],

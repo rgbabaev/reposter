@@ -1,3 +1,4 @@
+import { validateEntities } from "./text-entities.js";
 import { randomUUID } from "node:crypto";
 import type { Page, Post, PostImage } from "@monitor/shared";
 import { HttpError } from "./http.js";
@@ -28,8 +29,8 @@ export class Posts {
     return {
       id: row.id,
       ownerId: row.owner_id,
-      name: row.name,
       text: row.text,
+      entities: JSON.parse(row.entities),
       images: this.store.db
         .all(
           "SELECT id,name,mime_type,length(data) size FROM post_images WHERE post_id=? AND selected=1 ORDER BY ordinal",
@@ -71,12 +72,6 @@ export class Posts {
     const existing = this.store.db.get("SELECT id FROM posts WHERE id=?", id);
     if (existing) this.requireIdle(id);
     if (
-      typeof input.name !== "string" ||
-      !input.name.trim() ||
-      input.name.length > 120
-    )
-      throw new HttpError(400, "Post name must contain 1–120 characters.");
-    if (
       typeof input.text !== "string" ||
       !Array.isArray(input.images) ||
       input.images.length > 10
@@ -90,6 +85,7 @@ export class Posts {
         400,
         "Provide text or images. Text allows 4096 characters, or 1024 with images.",
       );
+    const entities = validateEntities(input.text, input.entities ?? []);
     const images = input.images.map((value: unknown) => {
       if (!value || typeof value !== "object")
         throw new HttpError(400, "Invalid image.");
@@ -117,13 +113,13 @@ export class Posts {
     this.store.db.transaction(() => {
       const time = now();
       this.store.db.run(
-        "INSERT INTO posts VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,text=excluded.text,updated_at=excluded.updated_at",
+        "INSERT INTO posts(id,owner_id,text,created_at,updated_at,entities) VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET text=excluded.text,updated_at=excluded.updated_at,entities=excluded.entities",
         id,
         "owner",
-        input.name!.toString().trim(),
         input.text as string,
         time,
         time,
+        JSON.stringify(entities),
       );
       this.store.db.run(
         "UPDATE post_images SET selected=0 WHERE post_id=?",

@@ -1,6 +1,6 @@
 # Manual checks
 
-Updated 2026-10-25. Tasks 01–11 and 13–17 implemented. Operator reports Release 1 acceptance checks passed except physical-phone testing and authorized Phase 2 with that check deferred. Publication, scheduled replacement, Pause/Resume and Run Now checks are operator-reported passed; full Phase 2 acceptance remains pending.
+Updated 2026-10-25. Tasks 01–11 and 13–19 implemented. Operator reports Release 1 acceptance checks passed except physical-phone testing and authorized Phase 2 with that check deferred. Publication, scheduled replacement, Pause/Resume and Run Now checks are operator-reported passed; full Phase 2 acceptance remains pending.
 
 ## Verified locally
 
@@ -86,7 +86,7 @@ Chromium with the real HTTP API passed at 390px and 320px: assigning disabled so
 
 `npm run build`, `npm run check` and `git diff --check` passed on Node 24.22.1. No test suite, CI or dependencies were added. See the remaining operator checks below.
 
-## Operator checklist for this update
+## Tasks 16–17 operator checklist
 
 Use controlled Telegram destinations. Stop the process and copy the data directory before upgrading. Migration 005 intentionally removes all existing rules; recreate them after restart.
 
@@ -101,3 +101,7 @@ Use controlled Telegram destinations. Stop the process and copy the data directo
 - [ ] Cancel the schedule-deletion confirmation once, then accept it. Restart: no future runs occur, while the reusable post, existing Telegram messages and publication history remain.
 - [ ] Complete the remaining Phase 2 live matrix above: text/albums in groups/topics, timed recurrence, paused restart, one overdue run after downtime, interruption during deletion/publication and real incident-email delivery.
 - [ ] On desktop Safari and a physical phone, check shared-source selection (including disabled sources), unassigned rules, schedule editing/deletion, keyboard/focus, layout and login/logout. Physical-phone acceptance remains deferred until performed.
+
+## Tasks 18–19
+
+See [update-checks.md](update-checks.md) for local verification and the current consolidated operator checklist. Earlier live results above remain unchanged.

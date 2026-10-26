@@ -74,17 +74,10 @@ export function loadConfig(
       !origin.username &&
       !origin.password &&
       (origin.protocol === "https:" ||
-        (origin.protocol === "http:" &&
-          ["localhost", "127.0.0.1", "[::1]"].includes(origin.hostname))),
+        origin.protocol === "http:"),
     "publicOrigin",
-    "must be an HTTPS origin, or loopback HTTP origin, with no trailing slash",
+    "must be an HTTP or HTTPS origin with no path or trailing slash",
   );
-  if (origin?.protocol === "http:")
-    check(
-      ["127.0.0.1", "::1", "localhost"].includes(x.bind),
-      "bind",
-      "must be loopback when using HTTP",
-    );
   check(
     Array.isArray(x.trustedProxies) &&
       x.trustedProxies.every(

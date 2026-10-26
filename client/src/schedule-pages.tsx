@@ -1,3 +1,4 @@
+import { postHeading, scheduleHeading } from "@monitor/shared";
 import { useEffect, useState } from "preact/hooks";
 import type {
   CalendarSchedule,
@@ -86,7 +87,7 @@ function ScheduleCard({
   const action = useAction();
   return (
     <article class="card">
-      <h2>{schedule.name}</h2>
+      <h2>{scheduleHeading(schedule)}</h2>
       <p>
         {schedule.destination.name} ·{" "}
         <strong>{schedule.paused ? "Paused" : "Active"}</strong>
@@ -147,7 +148,7 @@ function ScheduleCard({
           onClick={() => {
             if (
               !confirm(
-                "Delete this schedule? Future runs stop. The post, Telegram messages and publication history are retained.",
+                `Delete “${scheduleHeading(schedule)}”? Future runs stop. The post, Telegram messages and publication history are retained.`,
               )
             )
               return;
@@ -172,7 +173,6 @@ function ScheduleCard({
 export function ScheduleEditorPage({ id }: { id?: string }) {
   const remote = useRemote<Schedule>(id ? `/schedules/${id}` : null);
   const action = useAction();
-  const [name, setName] = useState("");
   const [postPage, setPostPage] = useState(1);
   const posts = useRemote<Page<Post>>(`/posts?page=${postPage}&pageSize=100`);
   const sources = useRemote<Page<Source>>("/sources?pageSize=100");
@@ -186,7 +186,6 @@ export function ScheduleEditorPage({ id }: { id?: string }) {
   useEffect(() => {
     if (!remote.data) return;
     const schedule = remote.data;
-    setName(schedule.name);
     setPostId(schedule.postId);
     setFrequency(schedule.calendar.frequency);
     setTime(
@@ -231,7 +230,6 @@ export function ScheduleEditorPage({ id }: { id?: string }) {
             await api(id ? `/schedules/${id}` : "/schedules", {
               method: id ? "PUT" : "POST",
               body: {
-                name,
                 postId,
                 ...(sourceId ? { sourceId } : {}),
                 calendar: {
@@ -248,15 +246,6 @@ export function ScheduleEditorPage({ id }: { id?: string }) {
         }}
       >
         <label class="field">
-          Name
-          <input
-            required
-            maxLength={120}
-            value={name}
-            onInput={(event) => setName(event.currentTarget.value)}
-          />
-        </label>
-        <label class="field">
           Post
           <select
             required
@@ -270,7 +259,7 @@ export function ScheduleEditorPage({ id }: { id?: string }) {
               )}
             {posts.data?.items.map((post) => (
               <option key={post.id} value={post.id}>
-                {post.name}
+                {postHeading(post)}
               </option>
             ))}
           </select>

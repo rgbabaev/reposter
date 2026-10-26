@@ -24,6 +24,8 @@ Scan the QR via **Telegram → Settings → Devices → Link Desktop Device**. I
 npm start
 ```
 
+For LAN HTTP access, set `bind` to `0.0.0.0` and `publicOrigin` to the server’s LAN origin, such as `http://192.168.1.20:3000`. Restart after configuration changes.
+
 Open the configured `publicOrigin`, sign in, refresh sources, and add rules.
 
 Use **More → Posts** to create text/image posts and publish now. Use **More → Schedules** for recurring UTC publication. Review interrupted or uncertain sends in **Posts → Publication history** before retrying.
@@ -44,3 +46,5 @@ Use **More → Posts** to create text/image posts and publish now. Use **More �
 | `npm start` | Start the application |
 
 See [operations](docs/operations.md) for HTTPS, deployment, backups, and recovery; [manual checks](docs/manual-checks.md) for validation status.
+
+Remaining live acceptance checks: [operator checklist](docs/update-checks.md).

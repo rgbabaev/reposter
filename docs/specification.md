@@ -52,7 +52,7 @@ Ignore message edits and deletion events. Inspect message text and captions. Rea
 
 ## 5. Rules and matches
 
-Rules are reusable across sources. A rule can be assigned to several sources, and each source can have several rules. Each rule has one name, enabled state, set of text conditions, and optional attachment-type condition shared by all its assignments. Editing or disabling a rule affects every assigned source. Source enable/disable remains independent; disabled sources do not match even when their rules are enabled.
+Rules are reusable across sources. A rule can be assigned to several sources, and each source can have several rules. Each rule has an enabled state, text conditions, and optional attachment-type condition shared by all its assignments. Rules, posts and schedules have no editable name; derive headings from their properties. Editing or disabling a rule affects every assigned source. Source enable/disable remains independent; disabled sources do not match even when their rules are enabled.
 
 An enabled rule must have at least one assigned source. Removing a source removes its assignments while preserving rules and stored matches. If a rule loses its last source, retain it as disabled and unassigned so it can be reassigned. Changing assignments does not reset source positions or reprocess completed items; recovery continues to use assignments and rules active at processing time. Evaluate a shared rule once per item even when both a forum and its topic are assigned.
 
@@ -68,7 +68,7 @@ Example: rule A requires `apartment` and `rent`. Rule B requires `#housing`. Eit
 
 Treat a media album as one item. Combine its text and attachment metadata before evaluation. Use a bounded collection delay. Persist incomplete album state for restart recovery. Do not create one notification per image.
 
-Store one notification per account, external source, and item identity. Store the source name, available sender details, text, source URL, message time, match time, and matched rule names. Preserve snapshots when a source or rule changes. If a sender or URL is unavailable, label it as unavailable.
+Store one notification per account, external source, and item identity. Store the source name, available sender details, text, source URL, message time, match time, and matched rule headings. Preserve snapshots when a source or rule changes. If a sender or URL is unavailable, label it as unavailable.
 
 Evaluate recovered items with the rules active at processing time. Do not reprocess stored matches when rules change. Discard unmatched content after processing, except temporary recovery state. Keep matched content until the user deletes it.
 
@@ -98,7 +98,7 @@ Show recent matches in pages, newest first. Provide match details and manual del
 
 Read the access password from a protected configuration file. Do not send it to the client build. Use random session tokens; store token hashes on the server. Sessions expire after seven days. Provide logout. Use HttpOnly, SameSite cookies and Secure cookies with HTTPS. Check request origin for writes. Limit login attempts and request sizes. Return only safe settings through the API.
 
-Serve the UI and JSON API from one origin. Use HTTPS behind a reverse proxy on a VPS. Permit HTTP on loopback for local use. Trust proxy headers only from configured proxies. Use authenticated, paginated API routes for sources, rules, matches, activity, connector status, and safe settings. Poll status while the UI is visible.
+Serve the UI and JSON API from one origin. Use HTTPS behind a reverse proxy on a VPS. Permit HTTP from loopback and private/link-local networks for local use. Trust proxy headers only from configured proxies. Use authenticated, paginated API routes for sources, rules, matches, activity, connector status, and safe settings. Poll status while the UI is visible.
 
 ## 8. Configuration and operation
 
@@ -110,13 +110,13 @@ Support a regular Node.js process and an optional container. Store the database 
 
 ## 9. Phase 2: publication
 
-Create a reusable post in the UI with plain text and uploaded images. Publish from the personal account to one group or forum topic per schedule. Import from existing Telegram messages is later work.
+Create a reusable post in the UI with formatted text and uploaded images. Publish from the personal account to one group or forum topic per schedule. Import from existing Telegram messages is later work.
 
-Planned in task 18: add Telegram-supported text formatting and attached-image ordering in the post editor. Preserve formatting and image order when saving, reopening and publishing posts, including captions, schedules and retry snapshots.
+Support bold, italic, underline, strikethrough, spoilers, inline code, preformatted text, links and blockquotes through text selection controls, plus attached-image ordering in the post editor. Preserve formatting and image order when saving, reopening and publishing posts, including captions, schedules and retry snapshots.
 
 Support daily, weekly, and monthly calendar schedules in UTC. Repeat one post. Clamp an unavailable monthly day to the month's last day. Preserve the original day for later months. Provide Pause, Resume, and Run Now. Run Now must not shift the recurring schedule.
 
-Schedules support editing their name, post, destination and UTC recurrence. Preserve pause state; recompute the next run only when recurrence changes. Retain previous message IDs and their original destination when changing destinations. Confirm schedule deletion; stop future runs while retaining its post, Telegram messages and publication history. Block edits and deletion while a run is queued, running, failed or uncertain; resolve it through publication history first. Serialize these actions with run creation.
+Schedules support editing their post, destination and UTC recurrence. Preserve pause state; recompute the next run only when recurrence changes. Retain previous message IDs and their original destination when changing destinations. Confirm schedule deletion; stop future runs while retaining its post, Telegram messages and publication history. Block edits and deletion while a run is queued, running, failed or uncertain; resolve it through publication history first. Serialize these actions with run creation.
 
 Before publication, delete the previous publication from that schedule. Delete only system-created messages. Store every sent message ID, including album items. If deletion fails, stop that run and report the error. Treat an already deleted message as success.
 

@@ -35,6 +35,7 @@ export interface Connector {
 export interface PublicationRequest {
   destination: PublicationDestination;
   text: string;
+  entities?: import("@monitor/shared").TextEntity[];
   images: { name: string; data: Uint8Array }[];
   randomIds: ID[];
 }

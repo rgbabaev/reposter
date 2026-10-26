@@ -58,7 +58,6 @@ export interface TextCondition {
 }
 export interface RuleInput {
   sourceIds: ID[];
-  name: string;
   enabled: boolean;
   conditions: TextCondition[];
   attachmentTypes: AttachmentType[];
@@ -154,8 +153,8 @@ export interface PostImage {
 export interface Post {
   id: ID;
   ownerId: ID;
-  name: string;
   text: string;
+  entities: TextEntity[];
   images: PostImage[];
   createdAt: string;
   updatedAt: string;
@@ -178,7 +177,7 @@ export interface Schedule {
   ownerId: ID;
   accountId: ID;
   postId: ID;
-  name: string;
+  postHeading: string;
   destination: PublicationDestination;
   calendar: CalendarSchedule;
   paused: boolean;
@@ -212,4 +211,49 @@ export interface PublicationRun {
   startedAt?: string;
   completedAt?: string;
   error?: string;
+}
+
+export type TextStyle =
+  | "bold"
+  | "italic"
+  | "underline"
+  | "strike"
+  | "spoiler"
+  | "code"
+  | "pre"
+  | "link"
+  | "blockquote";
+export interface TextEntity {
+  type: TextStyle;
+  offset: number;
+  length: number;
+  url?: string;
+}
+export function postHeading(post: { text: string; images: unknown[] }): string {
+  return (
+    post.text.trim().replace(/\s+/g, " ").slice(0, 100) ||
+    `${post.images.length} image${post.images.length === 1 ? "" : "s"}`
+  );
+}
+export function ruleHeading(
+  rule: Pick<RuleInput, "conditions" | "attachmentTypes">,
+): string {
+  return (
+    [
+      ...rule.conditions.map(
+        (condition) => `${condition.kind}: ${condition.value}`,
+      ),
+      ...rule.attachmentTypes,
+    ].join(" · ") || "Unassigned rule"
+  );
+}
+export function scheduleHeading(schedule: Schedule): string {
+  const c = schedule.calendar;
+  const day =
+    c.frequency === "weekly"
+      ? ` ${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][c.weekday!]}`
+      : c.frequency === "monthly"
+        ? ` day ${c.day}`
+        : "";
+  return `${schedule.postHeading} → ${schedule.destination.name} · ${c.frequency}${day} ${String(c.hour).padStart(2, "0")}:${String(c.minute).padStart(2, "0")} UTC`;
 }

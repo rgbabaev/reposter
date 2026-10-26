@@ -1,3 +1,4 @@
+import { BlockList, isIP } from "node:net";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Config } from "./config.js";
@@ -6,8 +7,23 @@ import { HttpError, body, json } from "./http.js";
 const hash = (value: string) =>
   createHash("sha256").update(value).digest("hex");
 const lifetime = 7 * 86400_000;
-const loopback = (ip: string) =>
-  ["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(ip);
+const localNetworks = new BlockList();
+for (const [network, prefix] of [
+  ["127.0.0.0", 8],
+  ["10.0.0.0", 8],
+  ["172.16.0.0", 12],
+  ["192.168.0.0", 16],
+  ["169.254.0.0", 16],
+] as const)
+  localNetworks.addSubnet(network, prefix, "ipv4");
+localNetworks.addAddress("::1", "ipv6");
+localNetworks.addSubnet("fc00::", 7, "ipv6");
+localNetworks.addSubnet("fe80::", 10, "ipv6");
+const localAddress = (address: string) => {
+  const ip = address.replace(/^::ffff:/i, "").split("%")[0]!;
+  const version = isIP(ip);
+  return version !== 0 && localNetworks.check(ip, version === 4 ? "ipv4" : "ipv6");
+};
 export class Auth {
   private attempts = new Map<string, { count: number; until: number }>();
   constructor(
@@ -24,7 +40,7 @@ export class Auth {
   transport(req: IncomingMessage) {
     if (this.config.publicOrigin.startsWith("https:"))
       return this.trusted(req) && req.headers["x-forwarded-proto"] === "https";
-    return loopback(req.socket.remoteAddress || "");
+    return localAddress(req.socket.remoteAddress || "");
   }
   origin(req: IncomingMessage) {
     if (req.headers.origin !== this.config.publicOrigin)

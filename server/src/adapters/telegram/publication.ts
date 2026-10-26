@@ -1,3 +1,4 @@
+import type { TextEntity } from "@monitor/shared";
 import { Api, TelegramClient, errors } from "telegram";
 import { CustomFile } from "telegram/client/uploads.js";
 import { readBigIntFromBuffer } from "telegram/Helpers.js";
@@ -10,6 +11,33 @@ const long = (value: string) => {
   buffer.writeBigInt64LE(BigInt(value));
   return readBigIntFromBuffer(buffer, true, true);
 };
+export function telegramEntities(
+  entities: TextEntity[] = [],
+): Api.TypeMessageEntity[] {
+  return entities.map((entity) => {
+    const range = { offset: entity.offset, length: entity.length };
+    switch (entity.type) {
+      case "bold":
+        return new Api.MessageEntityBold(range);
+      case "italic":
+        return new Api.MessageEntityItalic(range);
+      case "underline":
+        return new Api.MessageEntityUnderline(range);
+      case "strike":
+        return new Api.MessageEntityStrike(range);
+      case "spoiler":
+        return new Api.MessageEntitySpoiler(range);
+      case "code":
+        return new Api.MessageEntityCode(range);
+      case "pre":
+        return new Api.MessageEntityPre({ ...range, language: "" });
+      case "link":
+        return new Api.MessageEntityTextUrl({ ...range, url: entity.url! });
+      case "blockquote":
+        return new Api.MessageEntityBlockquote(range);
+    }
+  });
+}
 export async function publishTelegram(
   client: TelegramClient,
   request: PublicationRequest,
@@ -71,6 +99,7 @@ export async function publishTelegram(
           }),
           randomId: long(request.randomIds[index]!),
           message: index === 0 ? request.text : "",
+          entities: index === 0 ? telegramEntities(request.entities) : [],
         }),
       );
     }
@@ -91,6 +120,7 @@ export async function publishTelegram(
                 replyTo,
                 media: media[0]!.media,
                 message: request.text,
+                entities: telegramEntities(request.entities),
                 randomId: long(request.randomIds[0]!),
                 sendAs,
               })
@@ -98,6 +128,7 @@ export async function publishTelegram(
                 peer,
                 replyTo,
                 message: request.text,
+                entities: telegramEntities(request.entities),
                 noWebpage: true,
                 randomId: long(request.randomIds[0]!),
                 sendAs,

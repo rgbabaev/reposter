@@ -1,3 +1,4 @@
+import { postHeading } from "@monitor/shared";
 import { randomUUID } from "node:crypto";
 import type { Page, Schedule } from "@monitor/shared";
 import { nextOccurrence, validateCalendar } from "./calendar.js";
@@ -21,7 +22,7 @@ export class Schedules {
       ownerId: row.owner_id,
       accountId: row.account_id,
       postId: row.post_id,
-      name: row.name,
+      postHeading: postHeading(this.publications.posts.get(row.post_id)),
       destination: JSON.parse(row.destination),
       calendar: JSON.parse(row.calendar),
       paused: !!row.paused,
@@ -61,26 +62,17 @@ export class Schedules {
     };
   }
   create(input: Record<string, unknown>): Schedule {
-    if (
-      typeof input.name !== "string" ||
-      !input.name.trim() ||
-      input.name.length > 120 ||
-      typeof input.postId !== "string"
-    )
-      throw new HttpError(
-        400,
-        "Provide a schedule name (1–120 characters) and a post.",
-      );
+    if (typeof input.postId !== "string")
+      throw new HttpError(400, "Choose a post.");
     this.publications.posts.get(input.postId);
     const destination = this.publications.destination(input.sourceId);
     const calendar = validateCalendar(input.calendar);
     const id = randomUUID();
     this.store.db.run(
-      "INSERT INTO schedules(id,owner_id,post_id,name,destination,calendar,next_run_at,created_at) VALUES(?,?,?,?,?,?,?,?)",
+      "INSERT INTO schedules(id,owner_id,post_id,destination,calendar,next_run_at,created_at) VALUES(?,?,?,?,?,?,?)",
       id,
       "owner",
       input.postId,
-      input.name.trim(),
       JSON.stringify(destination),
       JSON.stringify(calendar),
       nextOccurrence(calendar, new Date()),
@@ -92,16 +84,8 @@ export class Schedules {
     return this.store.db.transaction(() => {
       const schedule = this.get(id);
       this.requireEditable(id);
-      if (
-        typeof input.name !== "string" ||
-        !input.name.trim() ||
-        input.name.length > 120 ||
-        typeof input.postId !== "string"
-      )
-        throw new HttpError(
-          400,
-          "Provide a schedule name (1–120 characters) and a post.",
-        );
+      if (typeof input.postId !== "string")
+        throw new HttpError(400, "Choose a post.");
       this.publications.posts.get(input.postId);
       const destination =
         input.sourceId === undefined
@@ -112,8 +96,7 @@ export class Schedules {
         JSON.stringify(calendar) !==
         JSON.stringify(validateCalendar(schedule.calendar));
       this.store.db.run(
-        "UPDATE schedules SET name=?,post_id=?,destination=?,calendar=?,next_run_at=? WHERE id=?",
-        input.name.trim(),
+        "UPDATE schedules SET post_id=?,destination=?,calendar=?,next_run_at=? WHERE id=?",
         input.postId,
         JSON.stringify(destination),
         JSON.stringify(calendar),

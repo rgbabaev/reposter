@@ -1,3 +1,4 @@
+import { postHeading } from "@monitor/shared";
 import { randomBytes, randomUUID } from "node:crypto";
 import type {
   Page,
@@ -69,7 +70,9 @@ export class Publications {
       accountId: row.account_id,
       scheduleId: row.schedule_id || undefined,
       postId: row.post_id,
-      postName: (JSON.parse(row.snapshot) as Post).name,
+      postName:
+        (JSON.parse(row.snapshot) as { name?: string }).name ??
+        postHeading(JSON.parse(row.snapshot)),
       destination: JSON.parse(row.destination),
       status: row.status,
       previousDestination: row.previous_destination
@@ -176,6 +179,7 @@ export class Publications {
     return {
       destination: JSON.parse(row.destination),
       text: post.text,
+      entities: post.entities ?? [],
       images: post.images.map((image) => this.posts.image(image.id)),
       randomIds: JSON.parse(row.random_ids),
     };

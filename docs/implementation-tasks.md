@@ -1,6 +1,6 @@
 # Implementation Tasks
 
-Reference: `specification.md`. Implementation status and actual check results: [manual-checks.md](manual-checks.md). Tasks 01–11 and 13–17 are implemented. The operator reports Release 1 checks passed except physical-phone testing; desktop Safari passed, and the operator authorized proceeding with the phone check deferred. Live Phase 2 publication checks remain pending. Follow the order below. Each task states its completion check. Use manual checks; do not add an automated test suite or CI in Release 1.
+Reference: `specification.md`. Implementation status and actual check results: [manual-checks.md](manual-checks.md). Tasks 01–11 and 13–19 are implemented. The operator reports Release 1 checks passed except physical-phone testing; desktop Safari passed, and the operator authorized proceeding with the phone check deferred. Live Phase 2 publication checks remain pending. Follow the order below. Each task states its completion check. Use manual checks; do not add an automated test suite or CI in Release 1.
 
 ## Release 1: monitoring
 
@@ -143,17 +143,19 @@ Local verification for tasks 16–17 passed with disposable legacy/current datab
 
 ### 18. Add post formatting and image ordering
 
-- [ ] Add Telegram-supported text formatting controls to the post editor and preserve formatting through saving, reopening and publication, including image captions.
-- [ ] Allow reordering attached images with mobile and keyboard controls. Persist the chosen order and use it when publishing albums.
-- [ ] Preserve formatting and image order in publication-run snapshots so retries use the original post version.
+- [x] Add Telegram-supported text formatting controls to the post editor and preserve formatting through saving, reopening and publication, including image captions.
+- [x] Allow reordering attached images with mobile and keyboard controls. Persist the chosen order and use it when publishing albums.
+- [x] Preserve formatting and image order in publication-run snapshots so retries use the original post version.
 - Check: save and reopen a formatted post with reordered images, then publish to a group and forum topic. Verify formatting, captions and album order in Telegram, including scheduled publication and retries.
 
 ### 19. Replace entity names with property-based headings
 
-- [ ] Remove the `name` field from schedules, posts and rules in storage, shared contracts, API validation and UI forms. Migrate existing data without losing entity relationships or publication state.
-- [ ] Compose UI headings from entity properties: post text or attachment summary; rule conditions; schedule post, destination and recurrence. Provide useful headings for empty text and unassigned rules.
-- [ ] Use derived headings wherever these entities are referenced, including selectors, details, confirmations and new notification/publication snapshots. Preserve historical snapshots.
+- [x] Remove the `name` field from schedules, posts and rules in storage, shared contracts, API validation and UI forms. Migrate existing data without losing entity relationships or publication state.
+- [x] Compose UI headings from entity properties: post text or attachment summary; rule conditions; schedule post, destination and recurrence. Provide useful headings for empty text and unassigned rules.
+- [x] Use derived headings wherever these entities are referenced, including selectors, details, confirmations and new notification/publication snapshots. Preserve historical snapshots.
 - Check: create, edit and reopen each entity without a name. Verify headings reflect property changes across the UI, migration preserves existing entities and relationships, and monitoring and scheduled publication still work.
+
+Local verification for tasks 18–19 and the remaining operator checklist: [update-checks.md](update-checks.md).
 
 ## Later work: ordered backlog
 

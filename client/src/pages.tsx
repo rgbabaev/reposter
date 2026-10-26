@@ -1,3 +1,4 @@
+import { ruleHeading } from "@monitor/shared";
 import { useEffect, useState } from "preact/hooks";
 import type {
   Activity,
@@ -303,7 +304,7 @@ export function SourcesPage() {
                       onClick={() => {
                         if (
                           confirm(
-                            `Remove “${source.name}” and its rules? Stored matches and queued emails will be kept.`,
+                            `Remove “${source.name}” and its rule assignments? Stored matches and queued emails will be kept.`,
                           )
                         )
                           void action.run(async () => {
@@ -382,7 +383,7 @@ export function RulesPage() {
               <article class="card" key={rule.id}>
                 <div class="card-heading">
                   <div>
-                    <h2>{rule.name}</h2>
+                    <h2>{ruleHeading(rule)}</h2>
                     <p class="muted">
                       {rule.sourceIds.length
                         ? rule.sourceIds
@@ -438,7 +439,7 @@ export function RulesPage() {
                     onClick={() => {
                       if (
                         confirm(
-                          `Delete “${rule.name}”? Existing matches will be kept.`,
+                          `Delete “${ruleHeading(rule)}”? Existing matches will be kept.`,
                         )
                       )
                         void action.run(async () => {
@@ -515,7 +516,6 @@ function RuleForm({ initial, sources }: { initial?: Rule; sources: Source[] }) {
     initial
       ? {
           sourceIds: [...initial.sourceIds],
-          name: initial.name,
           enabled: initial.enabled,
           conditions: initial.conditions.map((c) => ({ ...c })),
           attachmentTypes: [...initial.attachmentTypes],
@@ -524,7 +524,6 @@ function RuleForm({ initial, sources }: { initial?: Rule; sources: Source[] }) {
           sourceIds: sources
             .filter((source) => source.id === preferred)
             .map((source) => source.id),
-          name: "",
           enabled: true,
           conditions: [{ kind: "part", value: "" }],
           attachmentTypes: [],
@@ -563,18 +562,6 @@ function RuleForm({ initial, sources }: { initial?: Rule; sources: Source[] }) {
       }}
     >
       <ErrorNotice message={action.error} />
-      <label class="field">
-        Rule name
-        <input
-          required
-          maxLength={120}
-          value={draft.name}
-          onInput={(event) =>
-            setDraft({ ...draft, name: event.currentTarget.value })
-          }
-          autoComplete="off"
-        />
-      </label>
       <fieldset>
         <legend>Sources ({draft.sourceIds.length} selected)</legend>
         <p>

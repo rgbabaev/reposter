@@ -1,3 +1,4 @@
+import { ruleHeading } from "@monitor/shared";
 import { randomUUID } from "node:crypto";
 import type {
   Source,
@@ -95,7 +96,6 @@ export class Store {
           r.id,
         )
         .map((s) => s.source_id),
-      name: r.name,
       enabled: !!r.enabled,
       conditions: JSON.parse(r.conditions),
       attachmentTypes: JSON.parse(r.attachment_types),
@@ -118,10 +118,9 @@ export class Store {
         );
       const created = this.rules().find((r) => r.id === id)?.createdAt || now();
       this.db.run(
-        "INSERT INTO rules VALUES(?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,conditions=excluded.conditions,attachment_types=excluded.attachment_types",
+        "INSERT INTO rules(id,owner_id,enabled,conditions,attachment_types,created_at) VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET conditions=excluded.conditions,attachment_types=excluded.attachment_types",
         id,
         "owner",
-        input.name,
         Number(input.enabled),
         JSON.stringify(input.conditions),
         JSON.stringify(input.attachmentTypes),
@@ -184,7 +183,7 @@ export class Store {
             url: item.url,
             messageTime: item.eventTime,
             matchedAt: now(),
-            ruleNames: [...new Set(matching.map((r) => r.name))],
+            ruleNames: [...new Set(matching.map(ruleHeading))],
             attachments: item.attachments,
           };
           this.db.run(

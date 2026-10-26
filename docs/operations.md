@@ -16,7 +16,7 @@ Start with [config.example.json](../config.example.json). It deliberately contai
 | --- | --- |
 | `password` | Browser access password, 12–1024 characters; use a unique random password |
 | `bind`, `port` | Listener address and integer port from 1 to 65535 |
-| `publicOrigin` | Exact HTTPS origin, or loopback HTTP origin for local use; no path or trailing slash |
+| `publicOrigin` | Exact HTTP or HTTPS browser origin, including port; no path or trailing slash |
 | `trustedProxies` | Exact IP addresses of reverse proxies; CIDR ranges and arbitrary forwarded headers are not accepted |
 | `databasePath` | SQLite database path; relative paths resolve from the repository root |
 | `sessionPath` | Authorized Telegram session path; relative paths resolve from the repository root; different from the database path |
@@ -26,7 +26,7 @@ Start with [config.example.json](../config.example.json). It deliberately contai
 | `smtp.user`, `smtp.password` | SMTP authentication; use empty strings only when the SMTP service explicitly supports unauthenticated submission |
 | `smtp.from`, `smtp.to` | One sender address and one recipient address; display names and address lists are not supported |
 
-HTTP mode requires a loopback bind and only accepts loopback connections. HTTPS mode expects a configured trusted proxy and `X-Forwarded-Proto: https`. The server does not terminate TLS itself. Session cookies use HttpOnly and SameSite=Strict, plus Secure in HTTPS mode. Sessions expire after seven days; logout invalidates the current server session. Writes require the configured request origin. Login attempts and request sizes are limited.
+HTTP mode accepts loopback, private IPv4 (10/8, 172.16/12, 192.168/16), IPv4 link-local, and IPv6 unique-local/link-local connections. For LAN access, set `bind: "0.0.0.0"` (or the LAN interface address) and `publicOrigin: "http://192.168.1.20:3000"` using the server’s actual LAN address or hostname. HTTPS mode expects a configured trusted proxy and `X-Forwarded-Proto: https`. The server does not terminate TLS itself. Session cookies use HttpOnly and SameSite=Strict, plus Secure in HTTPS mode. Sessions expire after seven days; logout invalidates the current server session. Writes require the configured request origin. Login attempts and request sizes are limited.
 
 The API returns only safe configuration status. Credentials and storage paths are never sent to the browser build. Change file configuration while the application is stopped, then restart. Source selections and rules are managed through the UI.
 
@@ -126,7 +126,7 @@ docker run -d --init --name personal-monitor --restart unless-stopped \
 
 Do not run the CLI setup and application containers together. The session directory on the host must be mode `0700`. `docker stop --time 60 personal-monitor` permits graceful shutdown. Recreate or restart the application container to apply file configuration changes. Keep `/data` persistent and reuse it on restart. The health check requests the local health endpoint using the configured port; it does not disclose configuration.
 
-For strictly local container HTTP use, choose a network arrangement where requests actually arrive from loopback; merely publishing a bridged container’s port on host loopback does not make the request’s socket address loopback inside the container. The HTTPS proxy arrangement above avoids relying on that assumption. Do not disable transport checks to make a bridge work.
+For LAN container HTTP use, bind the application to `0.0.0.0`, publish its port on the host LAN address and set `publicOrigin` to the exact browser origin. Private bridge addresses are accepted in HTTP mode.
 
 ## Backup and restart
 

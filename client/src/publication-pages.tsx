@@ -1,4 +1,6 @@
-import { useEffect, useState } from "preact/hooks";
+import type { TextEntity, TextStyle } from "@monitor/shared";
+import { postHeading } from "@monitor/shared";
+import { useEffect, useRef, useState } from "preact/hooks";
 import type {
   Page,
   Post,
@@ -78,7 +80,7 @@ function PostCard({
   const [queued, setQueued] = useState(false);
   return (
     <article class="card">
-      <h2>{post.name}</h2>
+      <h2>{postHeading(post)}</h2>
       <p class="post-text">{post.text}</p>
       <ImageStrip images={post.images} />
       <p class="muted">Updated {utc(post.updatedAt)}</p>
@@ -93,7 +95,7 @@ function PostCard({
           onClick={() => {
             if (
               confirm(
-                "Delete this reusable post? Published Telegram messages remain.",
+                `Delete “${postHeading(post)}”? Published Telegram messages remain.`,
               )
             )
               void action.run(async () => {
@@ -190,13 +192,59 @@ function ImageStrip({ images }: { images: PostImage[] }) {
 export function PostEditorPage({ id }: { id?: string }) {
   const remote = useRemote<Post>(id ? `/posts/${id}` : null);
   const action = useAction();
-  const [name, setName] = useState("");
   const [text, setText] = useState("");
+  const [entities, setEntities] = useState<TextEntity[]>([]);
+  const textarea = useRef<HTMLTextAreaElement>(null);
+  const [style, setStyle] = useState<TextStyle>("bold");
+  const [url, setUrl] = useState("");
+  const [formatError, setFormatError] = useState("");
+  const moveImage = (index: number, direction: number) =>
+    setImages((current) => {
+      const next = [...current];
+      [next[index], next[index + direction]] = [
+        next[index + direction]!,
+        next[index]!,
+      ];
+      return next;
+    });
+  const changeText = (next: string) => {
+    let start = 0;
+    while (
+      start < text.length &&
+      start < next.length &&
+      text[start] === next[start]
+    )
+      start++;
+    let end = text.length;
+    let nextEnd = next.length;
+    while (
+      end > start &&
+      nextEnd > start &&
+      text[end - 1] === next[nextEnd - 1]
+    ) {
+      end--;
+      nextEnd--;
+    }
+    const delta = nextEnd - end;
+    setEntities((current) =>
+      current.flatMap((entity) => {
+        if (entity.offset + entity.length <= start) return [entity];
+        if (entity.offset >= end)
+          return [{ ...entity, offset: entity.offset + delta }];
+        if (entity.offset <= start && entity.offset + entity.length >= end) {
+          const length = entity.length + delta;
+          return length > 0 ? [{ ...entity, length }] : [];
+        }
+        return [];
+      }),
+    );
+    setText(next);
+  };
   const [images, setImages] = useState<DraftImage[]>([]);
   useEffect(() => {
     if (remote.data) {
-      setName(remote.data.name);
       setText(remote.data.text);
+      setEntities(remote.data.entities ?? []);
       setImages(remote.data.images);
     }
   }, [remote.data]);
@@ -204,7 +252,7 @@ export function PostEditorPage({ id }: { id?: string }) {
     <>
       <PageHeading
         title={id ? "Edit post" : "New post"}
-        description="Plain text, with up to ten JPEG or PNG images."
+        description="Formatted text, with up to ten JPEG or PNG images."
       />
       {id && (
         <p class="footnote">
@@ -224,33 +272,109 @@ export function PostEditorPage({ id }: { id?: string }) {
             void action.run(async () => {
               await api(id ? `/posts/${id}` : "/posts", {
                 method: id ? "PUT" : "POST",
-                body: { name, text, images },
+                body: { text, entities, images },
               });
               navigate("/posts");
             });
           }}
         >
           <label class="field">
-            Name
-            <input
-              required
-              maxLength={120}
-              value={name}
-              onInput={(event) => setName(event.currentTarget.value)}
-            />
-          </label>
-          <label class="field">
             Text
             <textarea
+              ref={textarea}
               rows={8}
               value={text}
               maxLength={images.length ? 1024 : 4096}
-              onInput={(event) => setText(event.currentTarget.value)}
+              onInput={(event) => changeText(event.currentTarget.value)}
             />
             <small>
               {text.length} / {images.length ? 1024 : 4096} characters
             </small>
           </label>
+          <fieldset>
+            <legend>Text formatting</legend>
+            <p>
+              Select text above, choose a style, then apply. Code and
+              preformatted ranges cannot overlap other styles.
+            </p>
+            <label class="field">
+              Style
+              <select
+                value={style}
+                onChange={(event) =>
+                  setStyle(event.currentTarget.value as TextStyle)
+                }
+              >
+                {(
+                  [
+                    "bold",
+                    "italic",
+                    "underline",
+                    "strike",
+                    "spoiler",
+                    "code",
+                    "pre",
+                    "link",
+                    "blockquote",
+                  ] as TextStyle[]
+                ).map((value) => (
+                  <option value={value}>{value}</option>
+                ))}
+              </select>
+            </label>
+            {style === "link" && (
+              <label class="field">
+                Link URL
+                <input
+                  type="url"
+                  value={url}
+                  onInput={(event) => setUrl(event.currentTarget.value)}
+                />
+              </label>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                const field = textarea.current;
+                if (!field || field.selectionEnd <= field.selectionStart) {
+                  setFormatError("Select text to format first.");
+                  return;
+                }
+                setEntities((current) => [
+                  ...current,
+                  {
+                    type: style,
+                    offset: field.selectionStart,
+                    length: field.selectionEnd - field.selectionStart,
+                    ...(style === "link" ? { url } : {}),
+                  },
+                ]);
+                setFormatError("");
+              }}
+            >
+              Apply to selected text
+            </button>
+            <ErrorNotice message={formatError} />
+            <ul>
+              {entities.map((entity, index) => (
+                <li>
+                  {entity.type}: “
+                  {text.slice(entity.offset, entity.offset + entity.length)}”
+                  {entity.url ? ` (${entity.url})` : ""}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEntities((current) =>
+                        current.filter((_, i) => i !== index),
+                      )
+                    }
+                  >
+                    Remove formatting {index + 1}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </fieldset>
           <label class="field">
             Add images
             <input
@@ -307,6 +431,22 @@ export function PostEditorPage({ id }: { id?: string }) {
                 <span>
                   {index + 1}. {image.name}
                 </span>
+                <button
+                  type="button"
+                  disabled={index === 0}
+                  aria-label={`Move image ${index + 1} earlier`}
+                  onClick={() => moveImage(index, -1)}
+                >
+                  Move earlier
+                </button>
+                <button
+                  type="button"
+                  disabled={index === images.length - 1}
+                  aria-label={`Move image ${index + 1} later`}
+                  onClick={() => moveImage(index, 1)}
+                >
+                  Move later
+                </button>
                 <button
                   type="button"
                   onClick={() =>
