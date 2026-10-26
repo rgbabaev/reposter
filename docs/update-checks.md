@@ -1,6 +1,6 @@
 # Remaining operator checks
 
-Tasks 18–19 implemented on 2026-10-25. Run these checks against controlled Telegram groups/topics. Stop the application and copy its data directory before upgrading, then rebuild and restart. Migration 007 preserves rules and relationships but removes editable entity names; migration 005 still removes legacy single-source rules if not previously applied.
+Tasks 18–19 implemented on 2026-10-25; task 20 (WYSIWYG editor) on 2026-10-26. Run these checks against controlled Telegram groups/topics. Stop the application and copy its data directory before upgrading, then rebuild and restart. Migration 007 preserves rules and relationships but removes editable entity names; migration 005 still removes legacy single-source rules if not previously applied.
 
 ## Local verification
 
@@ -11,6 +11,8 @@ Tasks 18–19 implemented on 2026-10-25. Run these checks against controlled Tel
 - Chromium at 390px/320px passed formatting save/reopen, Unicode text editing, keyboard image ordering, nameless rule/schedule creation and derived headings, without overflow or page errors.
 - Real GramJS constructors with stubbed RPC serialized formatting for text, single captions and first-image album captions in groups/topics. No live messages were sent.
 
+The WYSIWYG update passed Chromium/WebKit editing, touch, keyboard, paste, limit and simulated composition checks at 390px/320px. No storage migration or new dependency is needed for task 20. Clipboard HTML is pasted as text with the current style.
+
 ## Upgrade and headings
 
 - [ ] Upgrade an existing database. Confirm posts, images, rules, assignments, schedules, previous publication IDs, matches and email/publication history remain. Restart and check again.
@@ -19,7 +21,7 @@ Tasks 18–19 implemented on 2026-10-25. Run these checks against controlled Tel
 
 ## Formatting and image order
 
-- [ ] Select text and apply each style: bold, italic, underline, strike, spoiler, code, preformatted, link and blockquote. Include emoji, accented/non-Latin text and nested bold/italic. Save, reopen and restart; formatting ranges remain correct. Remove formatting and edit text before/inside ranges.
+- [ ] In the WYSIWYG editor, select text and toggle each style: bold, italic, underline, strike, spoiler, code, preformatted, link and blockquote. Include emoji, accented/non-Latin text and nested bold/italic. Save, reopen and restart; visible formatting remains correct. Clear styles, edit links, and edit text before/inside formatted text. Toggle a style before typing; check undo/redo and Ctrl/Cmd+B/I/U/K/Z (Shift+Z for redo). Paste multiline text and verify text/caption limits. On a physical phone, test selection, toolbar taps, autocorrect and a non-Latin keyboard.
 - [ ] Reorder three distinct images using touch and keyboard buttons; remove/add an image. Save, reopen and restart; the order remains. Confirm controls, focus and layout in Safari/Chromium at narrow widths and on a physical phone.
 - [ ] Publish formatted text, one image and a three-image album to both a group and a forum topic. Verify formatting, link targets, first-image caption, image order, personal-account sender and correct topic in Telegram.
 - [ ] Repeat through a timed schedule. Cause a definite publication rejection in a controlled destination, then edit formatting/order and restore access. Retry the failed run: original content/order are sent; a new run uses edits.
