@@ -1,7 +1,14 @@
+import type { NotificationDestination } from "@monitor/shared";
 import { isIP } from "node:net";
 import { readFileSync, statSync, lstatSync } from "node:fs";
 import { isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+export type TelegramNotificationTarget = NotificationDestination;
+export interface TelegramNotificationsConfig {
+  enabled: boolean;
+  externalId?: string;
+  topicId?: string;
+}
 export interface Config {
   password: string;
   bind: string;
@@ -11,6 +18,7 @@ export interface Config {
   databasePath: string;
   sessionPath: string;
   telegram: { apiId: number; apiHash: string };
+  telegramNotifications?: TelegramNotificationsConfig;
   smtp: {
     host: string;
     port: number;
@@ -73,8 +81,7 @@ export function loadConfig(
       origin.origin === x.publicOrigin &&
       !origin.username &&
       !origin.password &&
-      (origin.protocol === "https:" ||
-        origin.protocol === "http:"),
+      (origin.protocol === "https:" || origin.protocol === "http:"),
     "publicOrigin",
     "must be an HTTP or HTTPS origin with no path or trailing slash",
   );
@@ -125,6 +132,36 @@ export function loadConfig(
     "sessionPath",
     "must differ from databasePath",
   );
+  if (x.telegramNotifications !== undefined) {
+    const notifications = x.telegramNotifications;
+    const object =
+      notifications &&
+      typeof notifications === "object" &&
+      !Array.isArray(notifications);
+    check(
+      !!object && typeof notifications.enabled === "boolean",
+      "telegramNotifications.enabled",
+      "must be boolean",
+    );
+    if (object && notifications.enabled === true) {
+      check(
+        typeof notifications.externalId === "string" &&
+          (/^-?[1-9]\d{0,19}$/.test(notifications.externalId) ||
+            /^@[A-Za-z][A-Za-z0-9_]{4,31}$/.test(notifications.externalId) ||
+            notifications.externalId === "me"),
+        "telegramNotifications.externalId",
+        "must be a chat ID string, @username or me for Saved Messages",
+      );
+    }
+    if (object && notifications.topicId !== undefined)
+      check(
+        typeof notifications.topicId === "string" &&
+          /^[1-9]\d*$/.test(notifications.topicId) &&
+          Number(notifications.topicId) <= 2147483647,
+        "telegramNotifications.topicId",
+        "must be a positive topic ID string",
+      );
+  }
   const smtp = x.smtp;
   check(text(smtp?.host), "smtp.host", "is required");
   check(port(smtp?.port), "smtp.port", "must be a valid port");

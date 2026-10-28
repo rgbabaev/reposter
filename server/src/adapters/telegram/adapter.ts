@@ -1,3 +1,4 @@
+import { sendTelegramReport } from "./notifications.js";
 import { NewMessage } from "telegram/events/NewMessage.js";
 import type { Attachment, Sender } from "@monitor/shared";
 import { TelegramClient, Api, utils } from "telegram";
@@ -11,7 +12,7 @@ import type {
 import { makeClient } from "./session.js";
 import { history } from "./history.js";
 import { abortable, abortableItems } from "../../cancellation.js";
-import { PublicationError, type PublicationRequest } from "../../connector.js";
+import { NotificationError, type NotificationRequest, PublicationError, type PublicationRequest } from "../../connector.js";
 import type { PublicationDestination } from "@monitor/shared";
 import { publishTelegram, verifyTelegramPublication } from "./publication.js";
 export class TelegramConnector implements Connector {
@@ -174,6 +175,25 @@ export class TelegramConnector implements Connector {
     if (this.timer) clearInterval(this.timer);
     await this.client?.destroy();
     this.state = "disconnected";
+  }
+  async sendNotification(request: NotificationRequest, signal: AbortSignal) {
+    try {
+      await sendTelegramReport(
+        this.ready(),
+        request,
+        AbortSignal.any([
+          signal,
+          this.cancellation.signal,
+          AbortSignal.timeout(20000),
+        ]),
+      );
+    } catch (error) {
+      if (error instanceof NotificationError && error.cause)
+        this.providerError(error.cause);
+      else if (!(error instanceof NotificationError)) this.providerError(error);
+      if (error instanceof NotificationError) throw error;
+      throw new NotificationError("TELEGRAM_REPORT_CONNECTION");
+    }
   }
   async publish(request: PublicationRequest, recordIds: (ids: string[]) => void) {
     try {

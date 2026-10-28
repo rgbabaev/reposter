@@ -6,7 +6,7 @@ import type {
   ConnectorStatus,
   Dashboard as DashboardData,
   DiscoveredSource,
-  EmailJob,
+  NotificationJob,
   Match,
   Page,
   Rule,
@@ -77,6 +77,14 @@ export function Dashboard() {
             <Link href="/activity?view=delivery" class="stat">
               <span>Failed emails</span>
               <strong>{data.failedEmails}</strong>
+            </Link>
+            <Link href="/activity?view=delivery" class="stat">
+              <span>Pending Telegram reports</span>
+              <strong>{data.pendingTelegramNotifications}</strong>
+            </Link>
+            <Link href="/activity?view=delivery" class="stat">
+              <span>Failed Telegram reports</span>
+              <strong>{data.failedTelegramNotifications}</strong>
             </Link>
             <Link href="/activity" class="stat">
               <span>Open incidents</span>
@@ -304,7 +312,7 @@ export function SourcesPage() {
                       onClick={() => {
                         if (
                           confirm(
-                            `Remove “${source.name}” and its rule assignments? Stored matches and queued emails will be kept.`,
+                            `Remove “${source.name}” and its rule assignments? Stored matches and queued notifications will be kept.`,
                           )
                         )
                           void action.run(async () => {
@@ -705,17 +713,19 @@ function MatchCard({ match }: { match: Match }) {
         <h2>
           <Link href={"/matches/" + match.id}>{match.sourceName}</Link>
         </h2>
-        <span
-          class={
-            "badge " + (match.delivery?.status === "failed" ? "bad" : "neutral")
-          }
-        >
-          {match.delivery?.status === "sent"
-            ? "SMTP accepted"
-            : match.delivery?.status === "failed"
-              ? "Email failed"
-              : "Email pending"}
-        </span>
+        <div class="tags" aria-label="Notification delivery">
+          {(match.deliveries ?? (match.delivery ? [match.delivery] : [])).map(
+            (job) => (
+              <span
+                key={job.id}
+                class={`badge ${job.status === "failed" ? "bad" : job.status === "sent" ? "good" : "neutral"}`}
+              >
+                {job.channel === "telegram" ? "Telegram" : "Email"}{" "}
+                {job.status === "sent" ? "accepted" : job.status}
+              </span>
+            ),
+          )}
+        </div>
       </div>
       <p class="muted">{utc(match.messageTime)}</p>
       <p class="message-preview">
@@ -849,29 +859,40 @@ export function MatchDetail({ id }: { id: string }) {
               </div>
             </article>
             <section class="card" aria-labelledby="delivery-title">
-              <h2 id="delivery-title">Email delivery</h2>
-              <Delivery
-                job={match.delivery}
-                busy={action.busy}
-                onRetry={() =>
-                  action.run(async () => {
-                    await api("/jobs/" + match.delivery!.id + "/retry", {
-                      method: "POST",
-                      body: {},
-                    });
-                    remote.refresh();
-                  })
-                }
-              />
+              <h2 id="delivery-title">Notification delivery</h2>
+              {(
+                match.deliveries ?? (match.delivery ? [match.delivery] : [])
+              ).map((job) => (
+                <div key={job.id}>
+                  <h3>
+                    {job.channel === "telegram" ? "Telegram report" : "Email"}
+                  </h3>
+                  <Delivery
+                    job={job}
+                    busy={action.busy}
+                    onRetry={() =>
+                      action.run(async () => {
+                        await api("/jobs/" + job.id + "/retry", {
+                          method: "POST",
+                          body: {},
+                        });
+                        remote.refresh();
+                      })
+                    }
+                  />
+                </div>
+              ))}
               <p class="footnote">
-                SMTP acceptance does not confirm inbox delivery. An uncertain
-                send result can cause a duplicate email.
+                Accepted means the provider accepted the report. It does not
+                confirm it was read. An uncertain send result can cause a
+                duplicate notification.
               </p>
             </section>
             <section class="card">
               <h2>Delete stored match</h2>
               <p>
-                This keeps the Telegram message and any email already queued.
+                This keeps the Telegram message and any notifications already
+                queued.
               </p>
               <button
                 type="button"
@@ -880,7 +901,7 @@ export function MatchDetail({ id }: { id: string }) {
                 onClick={() => {
                   if (
                     confirm(
-                      "Delete this stored match? Telegram content and queued email will be kept.",
+                      "Delete this stored match? Telegram content and queued notifications will be kept.",
                     )
                   )
                     void action.run(async () => {
@@ -985,7 +1006,7 @@ export function ActivityPage() {
     view === "events" ? `/activity?page=${page}` : null,
     true,
   );
-  const jobs = useRemote<Page<EmailJob>>(
+  const jobs = useRemote<Page<NotificationJob>>(
     view === "delivery" ? `/jobs?page=${page}` : null,
     true,
   );
@@ -999,7 +1020,7 @@ export function ActivityPage() {
       </Link>
       <PageHeading
         title="Activity Log"
-        description="Operational incidents and durable email delivery."
+        description="Operational incidents and durable email and Telegram delivery."
       />
       <div class="segmented" role="group" aria-label="Activity view">
         <button
@@ -1022,7 +1043,7 @@ export function ActivityPage() {
             setPage(1);
           }}
         >
-          Email delivery
+          Notification delivery
         </button>
       </div>
       <ErrorNotice
@@ -1083,6 +1104,9 @@ export function ActivityPage() {
           <div class="stack">
             {jobs.data.items.map((job) => (
               <article class="card" key={job.id}>
+                <p class="muted">
+                  {job.channel === "telegram" ? "Telegram report" : "Email"}
+                </p>
                 <h2>
                   {job.kind === "match"
                     ? "Match notification"
@@ -1106,13 +1130,13 @@ export function ActivityPage() {
           </div>
           <Pager data={jobs.data} onPage={setPage} />
           <p class="footnote">
-            SMTP accepted means the SMTP server accepted the email. Inbox
-            delivery is outside the application’s control.
+            Accepted means SMTP or Telegram accepted the notification. Delivery
+            and reading are outside the application’s control.
           </p>
         </>
       ) : (
         jobs.data && (
-          <Empty title="No email jobs">
+          <Empty title="No notification jobs">
             Matches and incidents create durable delivery jobs.
           </Empty>
         )
@@ -1167,14 +1191,22 @@ export function SettingsPage({ onLogout }: { onLogout: () => void }) {
                 </dd>
               </div>
               <div>
+                <dt>Telegram reports</dt>
+                <dd>
+                  {remote.data.telegramNotificationsConfigured
+                    ? "Enabled for matches and incidents"
+                    : "Disabled; configure telegramNotifications in the protected configuration file"}
+                </dd>
+              </div>
+              <div>
                 <dt>Session duration</dt>
                 <dd>{remote.data.sessionDays} days</dd>
               </div>
             </dl>
             <p class="footnote">
-              Passwords, Telegram credentials, SMTP details, and storage paths
-              are managed in the protected configuration file. Restart the
-              application after changing that file.
+              Passwords, Telegram credentials, SMTP details, and
+              storage paths are managed in the protected configuration file.
+              Restart the application after changing that file.
             </p>
           </section>
         )
@@ -1227,7 +1259,7 @@ export function MorePage() {
         <Link href="/activity">
           <span>
             <strong>Activity Log</strong>
-            <small>Incidents and email delivery</small>
+            <small>Incidents and notification delivery</small>
           </span>
           <span aria-hidden="true">›</span>
         </Link>

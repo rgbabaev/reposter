@@ -21,6 +21,8 @@ Start with [config.example.json](../config.example.json). It deliberately contai
 | `databasePath` | SQLite database path; relative paths resolve from the repository root |
 | `sessionPath` | Authorized Telegram session path; relative paths resolve from the repository root; different from the database path |
 | `telegram.apiId`, `telegram.apiHash` | Operator’s own application credentials from my.telegram.org |
+| `telegramNotifications.enabled` | Optional; enable account-based Telegram reports alongside email (default disabled) |
+| `telegramNotifications.externalId`, `telegramNotifications.topicId` | Chat/channel ID string or @username; optional forum topic ID string |
 | `smtp.host`, `smtp.port` | SMTP server and port |
 | `smtp.secure` | `true` for implicit TLS, usually port 465; `false` requires STARTTLS, usually port 587 |
 | `smtp.user`, `smtp.password` | SMTP authentication; use empty strings only when the SMTP service explicitly supports unauthenticated submission |
@@ -64,6 +66,25 @@ Each scheduled run deletes only its recorded previous message IDs before publish
 Preparation failures and explicit Telegram client-error rejections become **failed**, with safe provider error codes and manual retry. Interrupted or ambiguous sends become **uncertain** and block that schedule. Check the destination in Telegram, then use **Save reviewed result** to confirm every message ID, including album members, or confirm that nothing was sent. Supplied IDs are checked against outgoing message, time, text, topic and album metadata; the operator must confirm they belong to this system run. Known IDs cannot be discarded. Confirmed partial albums become the next replacement's deletion target. Confirmed absence allows retry or cancellation and preserves the original error code. Uncertain runs are never automatically resent. See [ADR 0004](adr/0004-durable-publication-runs.md) and [ADR 0005](adr/0005-utc-calendar-schedules.md).
 
 Restart after building to apply the publication migration and start workers. Increase existing reverse-proxy request limits to 28 MiB for image posts; other API bodies retain their smaller application limits. No browser is needed for schedules or email workers.
+
+## Telegram notification reports
+
+Add this optional section to the protected configuration and restart:
+
+```json
+"telegramNotifications": {
+  "enabled": true,
+  "externalId": "-1001234567890"
+}
+```
+
+Use the destination's actual ID; private channel IDs include the `-100` prefix. A public `@username` or `me` (Saved Messages) also works. For a forum topic, add `"topicId": "123"`. Selected source IDs are available as `externalId` from the authenticated `/api/sources` response. A report destination need not be monitored. The connected account must have posting permission; channel posting requires appropriate rights. No bot or additional login is required.
+
+Both matches and incidents create reports alongside email. Reports contain source/sender details, matched rules, message text and the available original link. Missing links are labelled unavailable; nothing is forwarded or attached. Long reports use numbered parts with a stable report ID. Generated reports are excluded from matching, even if the destination is monitored.
+
+Reports queue while Telegram is disconnected and resume after reconnect/restart. Stable per-part request IDs and acknowledged progress support retries; delivery remains at least once. Telegram waits pause delivery, temporary failures back off to one hour, and permanent match failures offer manual retry. Incident failures remain pending without recursive alerts. Email continues independently, including connection-failure alerts that Telegram cannot deliver while disconnected.
+
+Inspect **Match details → Notification delivery**, **Activity Log → Notification delivery**, and dashboard counters. Sent means Telegram acknowledged the report, not that anyone read it. Disabling reports leaves queued jobs pending; re-enable to resume. Enabling does not replay old matches. Pending parts use the currently configured destination; already acknowledged parts are not replayed after a destination change. Existing email jobs and historical delivery IDs survive migration 008.
 
 ## HTTPS reverse proxy
 

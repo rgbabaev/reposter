@@ -1,16 +1,11 @@
 import type { TextEntity } from "@monitor/shared";
 import { Api, TelegramClient, errors } from "telegram";
 import { CustomFile } from "telegram/client/uploads.js";
-import { readBigIntFromBuffer } from "telegram/Helpers.js";
+import { telegramLong as long } from "./ids.js";
 import type { PublicationRequest } from "../../connector.js";
 import { PublicationError, ProviderError } from "../../connector.js";
 import { abortable } from "../../cancellation.js";
 
-const long = (value: string) => {
-  const buffer = Buffer.alloc(8);
-  buffer.writeBigInt64LE(BigInt(value));
-  return readBigIntFromBuffer(buffer, true, true);
-};
 export function telegramEntities(
   entities: TextEntity[] = [],
 ): Api.TypeMessageEntity[] {

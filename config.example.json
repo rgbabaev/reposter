@@ -18,5 +18,9 @@
     "password": "REPLACE_WITH_SMTP_PASSWORD",
     "from": "monitor@example.com",
     "to": "owner@example.com"
+  },
+  "telegramNotifications": {
+    "enabled": false,
+    "externalId": ""
   }
 }

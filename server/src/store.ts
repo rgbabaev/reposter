@@ -1,3 +1,4 @@
+import { notificationReportId } from "./notification-content.js";
 import { ruleHeading } from "@monitor/shared";
 import { randomUUID } from "node:crypto";
 import type {
@@ -6,16 +7,53 @@ import type {
   RuleInput,
   Match,
   IncomingItem,
-  EmailJob,
+  NotificationJob,
   Activity,
   Page,
   DiscoveredSource,
 } from "@monitor/shared";
 import { HttpError } from "./http.js";
+import type { TelegramNotificationTarget } from "./config.js";
 import { Storage } from "./db.js";
 export const now = () => new Date().toISOString();
 export class Store {
-  constructor(public readonly db: Storage) {}
+  constructor(
+    public readonly db: Storage,
+    private telegramNotifications?: TelegramNotificationTarget,
+  ) {}
+  private isNotificationReport(item: IncomingItem): boolean {
+    const id = notificationReportId(item.text);
+    return (
+      !!id &&
+      !!this.db.get(
+        "SELECT id FROM notification_jobs WHERE id=? AND channel='telegram'",
+        id,
+      )
+    );
+  }
+  private queueNotifications(
+    kind: "match" | "incident",
+    payload: unknown,
+    reference: string,
+  ) {
+    for (const channel of this.telegramNotifications
+      ? ["email", "telegram"]
+      : ["email"]) {
+      this.db.run(
+        "INSERT OR IGNORE INTO notification_jobs(id,kind,match_id,incident_id,payload,next_attempt_at,channel,destination) VALUES(?,?,?,?,?,?,?,?)",
+        randomUUID(),
+        kind,
+        kind === "match" ? reference : null,
+        kind === "incident" ? reference : null,
+        JSON.stringify(payload),
+        now(),
+        channel,
+        channel === "telegram"
+          ? JSON.stringify(this.telegramNotifications)
+          : null,
+      );
+    }
+  }
   sources(): Source[] {
     return this.db
       .all(
@@ -150,7 +188,7 @@ export class Store {
   ): boolean {
     const work = () => {
       let created = false;
-      if (matching.length) {
+      if (matching.length && !this.isNotificationReport(item)) {
         const key = this.db.run(
           "INSERT OR IGNORE INTO match_keys VALUES(?,?,?)",
           item.accountId,
@@ -196,14 +234,7 @@ export class Store {
             JSON.stringify(match),
             match.matchedAt,
           );
-          this.db.run(
-            "INSERT INTO email_jobs(id,kind,match_id,payload,next_attempt_at) VALUES(?,?,?,?,?)",
-            randomUUID(),
-            "match",
-            match.id,
-            JSON.stringify(match),
-            now(),
-          );
+          this.queueNotifications("match", match, match.id);
           created = true;
         }
       }
@@ -262,12 +293,19 @@ export class Store {
     };
   }
   private withDelivery(match: Match): Match {
-    const row = this.db.get(
-      "SELECT * FROM email_jobs WHERE match_id=?",
-      match.id,
-    );
-    return { ...match, delivery: row ? this.mapJob(row) : undefined };
+    const deliveries = this.db
+      .all(
+        "SELECT * FROM notification_jobs WHERE match_id=? ORDER BY channel",
+        match.id,
+      )
+      .map((row) => this.mapJob(row));
+    return {
+      ...match,
+      delivery: deliveries.find((job) => job.channel === "email"),
+      deliveries,
+    };
   }
+
   match(id: string) {
     const row = this.db.get("SELECT snapshot FROM matches WHERE id=?", id);
     return row ? this.withDelivery(JSON.parse(row.snapshot)) : undefined;
@@ -276,14 +314,23 @@ export class Store {
     this.db.transaction(() => {
       this.db.run("DELETE FROM matches WHERE id=?", id);
       this.db.run(
-        "UPDATE email_jobs SET payload='{}' WHERE match_id=? AND status='sent'",
+        "UPDATE notification_jobs SET payload='{}' WHERE match_id=? AND status='sent'",
         id,
       );
     });
   }
-  mapJob(r: Record<string, any>): EmailJob {
+  mapJob(r: Record<string, any>): NotificationJob {
     return {
       id: r.id,
+      channel: r.channel,
+      ...(r.channel === "telegram"
+        ? {
+            partsSent: Number(r.sent_parts),
+            partsTotal: r.random_ids
+              ? JSON.parse(r.random_ids).length
+              : undefined,
+          }
+        : {}),
       kind: r.kind,
       status: r.status,
       attempts: r.attempts,
@@ -292,16 +339,16 @@ export class Store {
       sentAt: r.sent_at || undefined,
     };
   }
-  jobs(page = 1, pageSize = 25): Page<EmailJob> {
+  jobs(page = 1, pageSize = 25): Page<NotificationJob> {
     return {
       items: this.db
         .all(
-          "SELECT * FROM email_jobs ORDER BY next_attempt_at DESC LIMIT ? OFFSET ?",
+          "SELECT * FROM notification_jobs ORDER BY next_attempt_at DESC LIMIT ? OFFSET ?",
           pageSize,
           (page - 1) * pageSize,
         )
         .map((r) => this.mapJob(r)),
-      total: Number(this.db.get("SELECT count(*) n FROM email_jobs")!.n),
+      total: Number(this.db.get("SELECT count(*) n FROM notification_jobs")!.n),
       page,
       pageSize,
     };
@@ -309,7 +356,7 @@ export class Store {
   retryJob(id: string) {
     return (
       this.db.run(
-        "UPDATE email_jobs SET status='pending',attempts=0,next_attempt_at=?,last_error=NULL WHERE id=? AND status<>'sent'",
+        "UPDATE notification_jobs SET status='pending',attempts=0,failures=0,next_attempt_at=?,last_error=NULL WHERE id=? AND status<>'sent'",
         now(),
         id,
       ).changes > 0
@@ -319,13 +366,18 @@ export class Store {
     try {
       this.db.transaction(() => {
         const row = this.db.get(
-          "SELECT id FROM activity WHERE incident_key=? AND resolved_at IS NULL AND level='error'",
+          "SELECT id,code,message,opened_at FROM activity WHERE incident_key=? AND resolved_at IS NULL AND level='error'",
           key,
         );
         if (row) {
           this.db.run(
             "UPDATE activity SET occurrences=occurrences+1,last_seen_at=? WHERE id=?",
             now(),
+            row.id,
+          );
+          this.queueNotifications(
+            "incident",
+            { code: row.code, message: row.message, openedAt: row.opened_at },
             row.id,
           );
           return;
@@ -341,12 +393,10 @@ export class Store {
           now(),
           now(),
         );
-        this.db.run(
-          "INSERT INTO email_jobs(id,kind,incident_id,payload,next_attempt_at) VALUES(?,'incident',?,?,?)",
-          randomUUID(),
+        this.queueNotifications(
+          "incident",
+          { code, message, openedAt: now() },
           id,
-          JSON.stringify({ code, message, openedAt: now() }),
-          now(),
         );
       });
     } catch {
@@ -398,7 +448,7 @@ export class Store {
   prune() {
     const cutoff = new Date(Date.now() - 30 * 86400_000).toISOString();
     this.db.run(
-      "DELETE FROM activity WHERE last_seen_at<? AND (level='info' OR resolved_at IS NOT NULL) AND id NOT IN (SELECT incident_id FROM email_jobs WHERE status<>'sent' AND incident_id IS NOT NULL)",
+      "DELETE FROM activity WHERE last_seen_at<? AND (level='info' OR resolved_at IS NOT NULL) AND id NOT IN (SELECT incident_id FROM notification_jobs WHERE status<>'sent' AND incident_id IS NOT NULL)",
       cutoff,
     );
     this.db.run("DELETE FROM sessions WHERE expires_at<?", now());
@@ -406,6 +456,8 @@ export class Store {
 }
 function incidentMessage(code: string): string {
   const labels: Record<string, string> = {
+    TELEGRAM_NOTIFICATION_DELIVERY:
+      "Telegram report delivery failed. Check the notification destination and account connection and delivery jobs.",
     SMTP_DELIVERY:
       "Email delivery failed. Pending jobs will resume when SMTP is available.",
     TELEGRAM_AUTH:

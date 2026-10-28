@@ -1,6 +1,6 @@
 # Implementation Tasks
 
-Reference: `specification.md`. Implementation status and actual check results: [manual-checks.md](manual-checks.md). Tasks 01–11 and 13–21 are implemented. The operator reports Release 1 checks passed except physical-phone testing; desktop Safari passed, and the operator authorized proceeding with the phone check deferred. Live Phase 2 publication checks remain pending. Follow the order below. Each task states its completion check. Use manual checks; do not add an automated test suite or CI in Release 1.
+Reference: `specification.md`. Implementation status and actual check results: [manual-checks.md](manual-checks.md). Tasks 01–11 and 13–22 are implemented. The operator reports Release 1 checks passed except physical-phone testing; desktop Safari passed, and the operator authorized proceeding with the phone check deferred. Live Phase 2 publication checks remain pending. Follow the order below. Each task states its completion check. Use manual checks; do not add an automated test suite or CI in Release 1.
 
 ## Release 1: monitoring
 
@@ -169,6 +169,15 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 - [x] Remove destination selection and direct publication from Posts. Keep posts reusable content.
 - [x] Link each post to schedule creation with its post preselected. Use schedule Run Now for immediate publication.
 - Check: Posts requires no source lookup; Create schedule selects the correct post, destination selection saves on the schedule, and ordinary schedule creation/editing still work.
+
+### 22. Add Telegram notification reports
+
+- [x] Add optional, file-configured reports from the existing Telegram account to one chat/channel/topic for both matches and incidents, alongside email.
+- [x] Share report content and original links; compose new messages without forwarding or media. Preserve complete Unicode text in numbered parts.
+- [x] Migrate email jobs to channel-aware notification jobs without changing IDs, payloads or delivery history. Commit both channels with matches and positions; preserve retry, part progress and random IDs through restart.
+- [x] Handle disconnection, waits, temporary/permanent failures, manual retry, graceful shutdown, incident grouping and report feedback prevention. Keep channel delivery independent.
+- [x] Show both channels and partial progress in match details/activity, dashboard counts and safe settings. Document configuration and live checks.
+- Check: receive a match report and an incident report in the configured Telegram destination and email; verify original links, restart recovery, long-report parts and independent failures. Local results and remaining live checks: [manual-checks.md](manual-checks.md), [update-checks.md](update-checks.md).
 
 ## Later work: ordered backlog
 

@@ -1,5 +1,5 @@
 import type { ComponentChildren } from "preact";
-import type { ConnectorStatus, EmailJob, Page } from "@monitor/shared";
+import type { ConnectorStatus, NotificationJob, Page } from "@monitor/shared";
 import { utc } from "./api";
 export function navigate(path: string) {
   history.pushState(null, "", path);
@@ -130,11 +130,12 @@ export function Delivery({
   onRetry,
   busy = false,
 }: {
-  job?: EmailJob;
+  job?: NotificationJob;
   onRetry?: () => void;
   busy?: boolean;
 }) {
-  if (!job) return <p class="muted">Email status: Unavailable</p>;
+  if (!job) return <p class="muted">Delivery status: Unavailable</p>;
+  const channel = job.channel === "telegram" ? "Telegram" : "Email";
   return (
     <div class="delivery">
       <span
@@ -148,10 +149,12 @@ export function Delivery({
         }
       >
         {job.status === "sent"
-          ? "SMTP accepted"
+          ? job.channel === "telegram"
+            ? "Telegram accepted"
+            : "SMTP accepted"
           : job.status === "failed"
-            ? "Email failed"
-            : "Email pending"}
+            ? `${channel} failed`
+            : `${channel} pending`}
       </span>
       <p class="muted">
         {job.attempts} {job.attempts === 1 ? "attempt" : "attempts"}
@@ -161,12 +164,17 @@ export function Delivery({
             ? ` · Next attempt ${utc(job.nextAttemptAt)}`
             : ""}
       </p>
+      {job.channel === "telegram" && !!job.partsTotal && (
+        <p class="muted">
+          {job.partsSent || 0} / {job.partsTotal} report parts accepted
+        </p>
+      )}
       {job.lastError && (
         <p class="error-text">{job.lastError.replaceAll("_", " ")}</p>
       )}
       {job.status !== "sent" && onRetry && (
         <button type="button" disabled={busy} onClick={onRetry}>
-          Retry email
+          Retry {job.channel === "telegram" ? "Telegram" : "email"}
         </button>
       )}
     </div>

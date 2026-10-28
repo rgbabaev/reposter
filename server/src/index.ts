@@ -4,6 +4,7 @@ import { loadConfig } from "./config.js";
 import { DataLock, Storage } from "./db.js";
 import { Store } from "./store.js";
 import { TelegramConnector } from "./adapters/telegram/adapter.js";
+import { TelegramNotificationWorker } from "./telegram-notifications.js";
 import { EmailWorker } from "./email.js";
 import { Monitor } from "./monitor.js";
 import { Sources } from "./sources.js";
@@ -18,7 +19,19 @@ async function main() {
   const lock = new DataLock(dirname(config.databasePath));
   let store: Store;
   try {
-    store = new Store(new Storage(config.databasePath));
+    store = new Store(
+      new Storage(config.databasePath),
+      config.telegramNotifications?.enabled
+        ? {
+            externalId: config.telegramNotifications.externalId!,
+            ...(config.telegramNotifications.topicId
+              ? {
+                  topicId: config.telegramNotifications.topicId,
+                }
+              : {}),
+          }
+        : undefined,
+    );
   } catch {
     lock.close();
     throw new Error("databasePath: could not open or migrate storage");
@@ -27,8 +40,17 @@ async function main() {
   const serial = new Serial();
   const sources = new Sources(store, connector, serial);
   const email = new EmailWorker(config, store);
-  const monitor = new Monitor(store, connector, serial, () => email.wake());
-  const publications = new Publications(store, connector, () => email.wake());
+  const telegramNotifications = new TelegramNotificationWorker(
+    config.telegramNotifications,
+    store,
+    connector,
+  );
+  const wakeNotifications = () => {
+    email.wake();
+    telegramNotifications.wake();
+  };
+  const monitor = new Monitor(store, connector, serial, wakeNotifications);
+  const publications = new Publications(store, connector, wakeNotifications);
   const schedules = new Schedules(store, publications);
   const api = new Api(
     config,
@@ -38,6 +60,7 @@ async function main() {
     email,
     publications,
     schedules,
+    telegramNotifications,
   );
   const server = createServer((req, res) => {
     void api.handle(req, res);
@@ -58,6 +81,7 @@ async function main() {
       "monitoring",
       "email",
       "publication",
+      "Telegram notifications",
     ]);
     const track = async (name: string, operation: Promise<unknown>) => {
       await operation;
@@ -79,6 +103,7 @@ async function main() {
         track("monitoring", monitor.stop()),
         track("Telegram", disconnect),
         track("email", email.stop()),
+        track("Telegram notifications", telegramNotifications.stop()),
         track("publication", publications.stop()),
         track("HTTP", stoppedHttp),
       ]);
@@ -147,6 +172,7 @@ async function main() {
       });
     monitor.start();
     email.start();
+    telegramNotifications.start();
     publications.start();
     schedules.start();
     const prune = () => {

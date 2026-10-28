@@ -1,0 +1,12 @@
+ALTER TABLE email_jobs RENAME TO notification_jobs;
+ALTER TABLE notification_jobs ADD COLUMN channel TEXT NOT NULL DEFAULT 'email' CHECK(channel IN ('email','telegram'));
+ALTER TABLE notification_jobs ADD COLUMN destination TEXT;
+ALTER TABLE notification_jobs ADD COLUMN parts TEXT;
+ALTER TABLE notification_jobs ADD COLUMN random_ids TEXT;
+ALTER TABLE notification_jobs ADD COLUMN failures INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE notification_jobs ADD COLUMN sent_parts INTEGER NOT NULL DEFAULT 0 CHECK(sent_parts>=0);
+CREATE INDEX notification_jobs_channel_ready ON notification_jobs(channel,status,next_attempt_at);
+CREATE UNIQUE INDEX notification_jobs_match ON notification_jobs(match_id,channel) WHERE match_id IS NOT NULL;
+CREATE UNIQUE INDEX notification_jobs_incident ON notification_jobs(incident_id,channel) WHERE incident_id IS NOT NULL;
+CREATE TABLE notification_state (channel TEXT PRIMARY KEY, next_send_at TEXT NOT NULL);
+INSERT INTO notification_state VALUES('telegram','1970-01-01T00:00:00.000Z');

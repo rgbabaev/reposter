@@ -1,6 +1,6 @@
 # Manual checks
 
-Updated 2026-10-25. Tasks 01–11 and 13–21 implemented. Operator reports Release 1 acceptance checks passed except physical-phone testing and authorized Phase 2 with that check deferred. Publication, scheduled replacement, Pause/Resume and Run Now checks are operator-reported passed; full Phase 2 acceptance remains pending.
+Updated 2026-10-25. Tasks 01–11 and 13–22 implemented. Operator reports Release 1 acceptance checks passed except physical-phone testing and authorized Phase 2 with that check deferred. Publication, scheduled replacement, Pause/Resume and Run Now checks are operator-reported passed; full Phase 2 acceptance remains pending.
 
 ## Verified locally
 
@@ -113,3 +113,13 @@ Production build, type and whitespace checks passed. Disposable browser checks i
 ## Post destinations (2026-10-26)
 
 Posts now links to schedule creation instead of presenting a destination/direct-publication form. Chromium and WebKit passed post preselection, saved schedule destination, ordinary creation/editing and 390/320px layouts. Posts no longer fetches sources. Build, type and whitespace checks passed.
+
+## Telegram notification reports (2026-10-27)
+
+Disposable SQLite and simulated connectors/SMTP passed legacy email-job migration, atomic two-channel queues and positions, duplicate handling, independent delivery, Unicode report splitting, original links, restart/partial progress, stable random IDs, rate waits, permanent/manual retries, grouped/non-recursive incidents, feedback prevention, match deletion retention and bounded shutdown. Email-only configurations still work. Real GramJS constructors with stubbed RPC serialized newly composed reports for private chats, groups, channels and topics; waits, auth, uncertain results and cancellation passed without forwarding/media calls.
+
+Chromium and WebKit at 390/320px passed per-channel match/activity status, Telegram retry, dashboard counts, safe settings and layout. Production build, type and whitespace checks passed. No test suite or dependencies were added.
+
+A read-only lookup of the authorized account identified the requested private ReposterNotifications channel, distinct from the group with the same title. Its stable ID is configured in the operator's protected, ignored configuration. No live notification was sent. Restart/migration and live report acceptance remain in [update-checks.md](update-checks.md).
+
+On 2026-10-28 the operator requested the ReposterNotifications chat instead. A second read-only lookup confirmed the distinct basic-group destination; the protected configuration now uses its ID. Fourteen Telegram jobs were pending with connection errors. Pending parts use the new destination after restart; no live report was sent during this change.

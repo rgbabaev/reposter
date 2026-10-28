@@ -13,6 +13,7 @@ import { Auth } from "./auth.js";
 import { HttpError, json, securityHeaders, body, pagination } from "./http.js";
 import { PublicationApi } from "./publication-api.js";
 import type { Publications } from "./publications.js";
+import type { TelegramNotificationWorker } from "./telegram-notifications.js";
 import type { Schedules } from "./schedules.js";
 export class Api {
   private auth: Auth;
@@ -25,6 +26,7 @@ export class Api {
     private email?: EmailWorker,
     publications?: Publications,
     schedules?: Schedules,
+    private telegramNotifications?: TelegramNotificationWorker,
   ) {
     this.auth = new Auth(config, store);
     if (publications && schedules)
@@ -158,8 +160,12 @@ export class Api {
         const retryRoute = path.match(/^\/api\/jobs\/([^/]+)\/retry$/);
         if (retryRoute && req.method === "POST") {
           if (!this.store.retryJob(retryRoute[1]!))
-            throw new HttpError(404, "Pending or failed email job not found.");
+            throw new HttpError(
+              404,
+              "Pending or failed notification job not found.",
+            );
           this.email?.wake();
+          this.telegramNotifications?.wake();
           json(res, 200, { queued: true });
           return;
         }
@@ -172,10 +178,16 @@ export class Api {
             rules: this.store.rules().length,
             matches: count("SELECT count(*) n FROM matches"),
             pendingEmails: count(
-              "SELECT count(*) n FROM email_jobs WHERE status='pending'",
+              "SELECT count(*) n FROM notification_jobs WHERE channel='email' AND status='pending'",
             ),
             failedEmails: count(
-              "SELECT count(*) n FROM email_jobs WHERE status='failed'",
+              "SELECT count(*) n FROM notification_jobs WHERE channel='email' AND status='failed'",
+            ),
+            pendingTelegramNotifications: count(
+              "SELECT count(*) n FROM notification_jobs WHERE channel='telegram' AND status='pending'",
+            ),
+            failedTelegramNotifications: count(
+              "SELECT count(*) n FROM notification_jobs WHERE channel='telegram' AND status='failed'",
             ),
             incidents: count(
               "SELECT count(*) n FROM activity WHERE level='error' AND resolved_at IS NULL",
@@ -194,6 +206,8 @@ export class Api {
             timezone: "UTC",
             smtpConfigured: !!this.config.smtp.host,
             telegramConfigured: !!this.config.telegram.apiId,
+            telegramNotificationsConfigured:
+              this.config.telegramNotifications?.enabled === true,
             sessionDays: 7,
             configChangesRequireRestart: true,
           });

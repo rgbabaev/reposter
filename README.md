@@ -48,3 +48,5 @@ Use **More â†’ Posts** to create text/image posts and publish now. Use **More â†
 See [operations](docs/operations.md) for HTTPS, deployment, backups, and recovery; [manual checks](docs/manual-checks.md) for validation status.
 
 Remaining live acceptance checks: [operator checklist](docs/update-checks.md).
+
+Optional Telegram reports use the existing account alongside email. Configure `telegramNotifications` as described in [operations](docs/operations.md#telegram-notification-reports), then restart. Match details and Activity Log show both delivery channels and retries.

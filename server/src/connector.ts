@@ -4,6 +4,7 @@ import type {
   IncomingItem,
   ID,
   PublicationDestination,
+  NotificationDestination,
 } from "@monitor/shared";
 /** Each adapter owns authorization, provider types, retry policy and recovery errors. */
 export interface Connector {
@@ -18,6 +19,10 @@ export interface Connector {
   stop(): Promise<void>;
   currentPosition(externalSourceId: ID): Promise<string>;
   recover(externalSourceId: ID, after: string): AsyncIterable<IncomingItem>;
+  sendNotification?(
+    request: NotificationRequest,
+    signal: AbortSignal,
+  ): Promise<void>;
   publish?(
     request: PublicationRequest,
     recordIds: (ids: ID[]) => void,
@@ -32,6 +37,11 @@ export interface Connector {
     since: string,
   ): Promise<void>;
 }
+export interface NotificationRequest {
+  destination: NotificationDestination;
+  text: string;
+  randomId: ID;
+}
 export interface PublicationRequest {
   destination: PublicationDestination;
   text: string;
@@ -45,6 +55,17 @@ export class ProviderError extends Error {
     public readonly retryAfterSeconds?: number,
   ) {
     super(code);
+  }
+}
+export class NotificationError extends ProviderError {
+  constructor(
+    code: string,
+    public readonly permanent = false,
+    retryAfterSeconds = 0,
+    cause?: unknown,
+  ) {
+    super(code, retryAfterSeconds);
+    this.cause = cause;
   }
 }
 export class PublicationError extends ProviderError {

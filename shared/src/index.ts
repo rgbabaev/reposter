@@ -81,9 +81,18 @@ export interface Match {
   matchedAt: string;
   ruleNames: string[];
   attachments: Attachment[];
-  delivery?: EmailJob;
+  delivery?: NotificationJob;
+  deliveries?: NotificationJob[];
 }
-export interface EmailJob {
+export interface NotificationDestination {
+  externalId: ID;
+  topicId?: ID;
+}
+export type NotificationChannel = "email" | "telegram";
+export interface NotificationJob {
+  channel: NotificationChannel;
+  partsSent?: number;
+  partsTotal?: number;
   id: ID;
   kind: "match" | "incident";
   status: "pending" | "sent" | "failed";
@@ -127,6 +136,7 @@ export interface SafeSettings {
   timezone: "UTC";
   smtpConfigured: boolean;
   telegramConfigured: boolean;
+  telegramNotificationsConfigured: boolean;
   sessionDays: number;
   configChangesRequireRestart: true;
 }
@@ -137,6 +147,8 @@ export interface Dashboard {
   matches: number;
   pendingEmails: number;
   failedEmails: number;
+  pendingTelegramNotifications: number;
+  failedTelegramNotifications: number;
   incidents: number;
   connector: ConnectorStatus;
 }
