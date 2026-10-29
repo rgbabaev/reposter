@@ -67,6 +67,12 @@ Preparation failures and explicit Telegram client-error rejections become **fail
 
 Restart after building to apply the publication migration and start workers. Increase existing reverse-proxy request limits to 28 MiB for image posts; other API bodies retain their smaller application limits. No browser is needed for schedules or email workers.
 
+## Notification channel switches
+
+Use **More → Settings → Notification channels** to switch email and Telegram independently for matches and incidents. Changes apply immediately and survive restart. Telegram's switch is available once its protected-file configuration is enabled and the application restarted.
+
+Off stops new jobs for that channel and holds pending jobs. On resumes pending delivery without replaying matches processed while off. A send already in progress may finish. Both channels may be off; matches, processing positions and incidents remain stored. Manual retry requires its channel to be on. Migration 009 preserves the previous delivery defaults. File-only credentials, recipients and Telegram destination settings still require restart after editing.
+
 ## Telegram notification reports
 
 Add this optional section to the protected configuration and restart:

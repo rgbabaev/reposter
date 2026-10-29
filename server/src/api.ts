@@ -200,8 +200,16 @@ export class Api {
           json(res, 200, this.connector?.status() || { state: "disconnected" });
           return;
         }
+        if (path === "/api/settings/notifications" && req.method === "PATCH") {
+          const channels = this.store.setNotificationChannels(await body(req));
+          this.email?.wake();
+          this.telegramNotifications?.wake();
+          json(res, 200, channels);
+          return;
+        }
         if (path === "/api/settings" && req.method === "GET") {
           json(res, 200, {
+            notificationChannels: this.store.notificationChannels(),
             publicOrigin: this.config.publicOrigin,
             timezone: "UTC",
             smtpConfigured: !!this.config.smtp.host,

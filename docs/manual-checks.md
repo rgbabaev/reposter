@@ -1,6 +1,6 @@
 # Manual checks
 
-Updated 2026-10-25. Tasks 01–11 and 13–22 implemented. Operator reports Release 1 acceptance checks passed except physical-phone testing and authorized Phase 2 with that check deferred. Publication, scheduled replacement, Pause/Resume and Run Now checks are operator-reported passed; full Phase 2 acceptance remains pending.
+Updated 2026-10-25. Tasks 01–11 and 13–23 implemented. Operator reports Release 1 acceptance checks passed except physical-phone testing and authorized Phase 2 with that check deferred. Publication, scheduled replacement, Pause/Resume and Run Now checks are operator-reported passed; full Phase 2 acceptance remains pending.
 
 ## Verified locally
 
@@ -123,3 +123,9 @@ Chromium and WebKit at 390/320px passed per-channel match/activity status, Teleg
 A read-only lookup of the authorized account identified the requested private ReposterNotifications channel, distinct from the group with the same title. Its stable ID is configured in the operator's protected, ignored configuration. No live notification was sent. Restart/migration and live report acceptance remain in [update-checks.md](update-checks.md).
 
 On 2026-10-28 the operator requested the ReposterNotifications chat instead. A second read-only lookup confirmed the distinct basic-group destination; the protected configuration now uses its ID. Fourteen Telegram jobs were pending with connection errors. Pending parts use the new destination after restart; no live report was sent during this change.
+
+## Notification channel switches (2026-10-28)
+
+Disposable storage/worker checks passed independent switches, suppressed new jobs, held pending attempts, restart persistence, resumed delivery without replay, disabled-retry rejection, both-off match/incident storage and position advancement, atomic validation, unavailable Telegram and in-flight completion followed by stopping the next send. Existing Telegram/email delivery smoke checks still passed.
+
+Chromium and WebKit at 390/320px passed Settings toggles, reload persistence, keyboard use, 44px labels, both-off status, rollback after failed saves, unavailable Telegram, and authenticated/origin-protected validation. Build, type and whitespace checks passed. Live acceptance remains in [update-checks.md](update-checks.md).

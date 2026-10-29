@@ -8,6 +8,8 @@ import type {
   Match,
   IncomingItem,
   NotificationJob,
+  NotificationChannel,
+  NotificationChannels,
   Activity,
   Page,
   DiscoveredSource,
@@ -21,6 +23,52 @@ export class Store {
     public readonly db: Storage,
     private telegramNotifications?: TelegramNotificationTarget,
   ) {}
+  notificationChannelEnabled(channel: NotificationChannel): boolean {
+    return (
+      (channel === "email" || !!this.telegramNotifications) &&
+      this.db.get(
+        "SELECT enabled FROM notification_preferences WHERE channel=?",
+        channel,
+      )?.enabled === 1
+    );
+  }
+  notificationChannels(): NotificationChannels {
+    return {
+      email: this.notificationChannelEnabled("email"),
+      telegram: this.notificationChannelEnabled("telegram"),
+    };
+  }
+  setNotificationChannels(
+    input: Record<string, unknown>,
+  ): NotificationChannels {
+    const channels = Object.keys(input);
+    if (
+      !channels.length ||
+      channels.some(
+        (channel) =>
+          !["email", "telegram"].includes(channel) ||
+          typeof input[channel] !== "boolean",
+      )
+    )
+      throw new HttpError(
+        400,
+        "Provide email and/or telegram as boolean switches.",
+      );
+    if (input.telegram === true && !this.telegramNotifications)
+      throw new HttpError(
+        409,
+        "Configure and enable telegramNotifications in the protected configuration file, then restart before switching Telegram on.",
+      );
+    this.db.transaction(() => {
+      for (const channel of channels)
+        this.db.run(
+          "UPDATE notification_preferences SET enabled=? WHERE channel=?",
+          Number(input[channel]),
+          channel,
+        );
+    });
+    return this.notificationChannels();
+  }
   private isNotificationReport(item: IncomingItem): boolean {
     const id = notificationReportId(item.text);
     return (
@@ -36,9 +84,10 @@ export class Store {
     payload: unknown,
     reference: string,
   ) {
-    for (const channel of this.telegramNotifications
-      ? ["email", "telegram"]
-      : ["email"]) {
+    const channels: NotificationChannel[] = ["email", "telegram"];
+    for (const channel of channels.filter((channel) =>
+      this.notificationChannelEnabled(channel),
+    )) {
       this.db.run(
         "INSERT OR IGNORE INTO notification_jobs(id,kind,match_id,incident_id,payload,next_attempt_at,channel,destination) VALUES(?,?,?,?,?,?,?,?)",
         randomUUID(),
@@ -354,6 +403,16 @@ export class Store {
     };
   }
   retryJob(id: string) {
+    const job = this.db.get(
+      "SELECT channel FROM notification_jobs WHERE id=? AND status<>'sent'",
+      id,
+    );
+    if (!job) return false;
+    if (!this.notificationChannelEnabled(job.channel))
+      throw new HttpError(
+        409,
+        `Enable ${job.channel === "telegram" ? "Telegram" : "email"} notifications in Settings before retrying.`,
+      );
     return (
       this.db.run(
         "UPDATE notification_jobs SET status='pending',attempts=0,failures=0,next_attempt_at=?,last_error=NULL WHERE id=? AND status<>'sent'",

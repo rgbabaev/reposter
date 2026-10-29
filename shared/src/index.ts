@@ -131,7 +131,12 @@ export interface Page<T> {
   pageSize: number;
   total: number;
 }
+export interface NotificationChannels {
+  email: boolean;
+  telegram: boolean;
+}
 export interface SafeSettings {
+  notificationChannels: NotificationChannels;
   publicOrigin: string;
   timezone: "UTC";
   smtpConfigured: boolean;

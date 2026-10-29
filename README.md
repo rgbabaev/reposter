@@ -50,3 +50,5 @@ See [operations](docs/operations.md) for HTTPS, deployment, backups, and recover
 Remaining live acceptance checks: [operator checklist](docs/update-checks.md).
 
 Optional Telegram reports use the existing account alongside email. Configure `telegramNotifications` as described in [operations](docs/operations.md#telegram-notification-reports), then restart. Match details and Activity Log show both delivery channels and retries.
+
+Switch email and Telegram delivery independently in **More → Settings → Notification channels**. Changes persist and apply immediately; paused queues resume when re-enabled.

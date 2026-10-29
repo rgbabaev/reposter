@@ -7,6 +7,7 @@ import type {
   Dashboard as DashboardData,
   DiscoveredSource,
   NotificationJob,
+  NotificationChannels,
   Match,
   Page,
   Rule,
@@ -1148,6 +1149,28 @@ export function ActivityPage() {
 export function SettingsPage({ onLogout }: { onLogout: () => void }) {
   const remote = useRemote<SafeSettings>("/settings");
   const action = useAction();
+  const [channels, setChannels] = useState<NotificationChannels>();
+  const selectedChannels = channels ?? remote.data?.notificationChannels;
+  const toggleChannel = (
+    channel: keyof NotificationChannels,
+    enabled: boolean,
+  ) =>
+    action.run(async () => {
+      if (!selectedChannels) return;
+      const previous = selectedChannels;
+      setChannels({ ...previous, [channel]: enabled });
+      try {
+        setChannels(
+          await api<NotificationChannels>("/settings/notifications", {
+            method: "PATCH",
+            body: { [channel]: enabled },
+          }),
+        );
+      } catch (error) {
+        setChannels(previous);
+        throw error;
+      }
+    });
   return (
     <>
       <Link class="back-link" href="/more">
@@ -1165,50 +1188,108 @@ export function SettingsPage({ onLogout }: { onLogout: () => void }) {
         <Loading />
       ) : (
         remote.data && (
-          <section class="card">
-            <h2>Application</h2>
-            <dl class="details">
-              <div>
-                <dt>Public origin</dt>
-                <dd>{remote.data.publicOrigin}</dd>
-              </div>
-              <div>
-                <dt>Timezone</dt>
-                <dd>{remote.data.timezone}</dd>
-              </div>
-              <div>
-                <dt>Telegram credentials</dt>
-                <dd>
-                  {remote.data.telegramConfigured
-                    ? "Configured"
-                    : "Not configured"}
-                </dd>
-              </div>
-              <div>
-                <dt>SMTP</dt>
-                <dd>
-                  {remote.data.smtpConfigured ? "Configured" : "Not configured"}
-                </dd>
-              </div>
-              <div>
-                <dt>Telegram reports</dt>
-                <dd>
-                  {remote.data.telegramNotificationsConfigured
-                    ? "Enabled for matches and incidents"
-                    : "Disabled; configure telegramNotifications in the protected configuration file"}
-                </dd>
-              </div>
-              <div>
-                <dt>Session duration</dt>
-                <dd>{remote.data.sessionDays} days</dd>
-              </div>
-            </dl>
-            <p class="footnote">
-              Passwords, Telegram credentials, SMTP details, and
-              storage paths are managed in the protected configuration file.
-              Restart the application after changing that file.
-            </p>
-          </section>
+          <>
+            <section class="card" aria-labelledby="notification-channels-title">
+              <h2 id="notification-channels-title">Notification channels</h2>
+              <p>
+                Choose where to receive match and incident reports. Changes
+                apply immediately and survive restart.
+              </p>
+              <fieldset disabled={action.busy}>
+                <legend>Delivery channels</legend>
+                <label class="check">
+                  <input
+                    type="checkbox"
+                    checked={selectedChannels?.email ?? false}
+                    onChange={(event) =>
+                      void toggleChannel("email", event.currentTarget.checked)
+                    }
+                  />
+                  Email notifications
+                </label>
+                <label class="check">
+                  <input
+                    type="checkbox"
+                    checked={selectedChannels?.telegram ?? false}
+                    disabled={!remote.data.telegramNotificationsConfigured}
+                    onChange={(event) =>
+                      void toggleChannel(
+                        "telegram",
+                        event.currentTarget.checked,
+                      )
+                    }
+                  />
+                  Telegram notifications
+                </label>
+              </fieldset>
+              {!remote.data.telegramNotificationsConfigured && (
+                <p class="muted">
+                  Configure and enable Telegram reports in the protected
+                  configuration file, then restart to make this switch
+                  available.
+                </p>
+              )}
+              {selectedChannels &&
+                !selectedChannels.email &&
+                !selectedChannels.telegram && (
+                  <p role="status">
+                    Both channels are off. Matches and incidents are still
+                    stored.
+                  </p>
+                )}
+              <p class="footnote">
+                Off pauses queued delivery and stops new notifications for that
+                channel. Re-enable to resume pending jobs. A send already in
+                progress may finish.
+              </p>
+            </section>
+            <section class="card">
+              <h2>Application</h2>
+              <dl class="details">
+                <div>
+                  <dt>Public origin</dt>
+                  <dd>{remote.data.publicOrigin}</dd>
+                </div>
+                <div>
+                  <dt>Timezone</dt>
+                  <dd>{remote.data.timezone}</dd>
+                </div>
+                <div>
+                  <dt>Telegram credentials</dt>
+                  <dd>
+                    {remote.data.telegramConfigured
+                      ? "Configured"
+                      : "Not configured"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>SMTP</dt>
+                  <dd>
+                    {remote.data.smtpConfigured
+                      ? "Configured"
+                      : "Not configured"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Telegram reports</dt>
+                  <dd>
+                    {remote.data.telegramNotificationsConfigured
+                      ? "Configured"
+                      : "Not configured"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Session duration</dt>
+                  <dd>{remote.data.sessionDays} days</dd>
+                </div>
+              </dl>
+              <p class="footnote">
+                Passwords, Telegram credentials, SMTP details, and storage paths
+                are managed in the protected configuration file. Restart the
+                application after changing that file.
+              </p>
+            </section>
+          </>
         )
       )}
       <section class="card">

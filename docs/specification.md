@@ -86,6 +86,8 @@ Database notifications must be unique. SMTP delivery is at least once: an uncert
 
 Optionally send match and incident reports from the existing Telegram account to one configured chat, private/public channel or forum topic, alongside email. Compose new text reports with the same source, sender, text, rule headings, times and available original-message link as email; do not forward messages or attach media. Split long reports into numbered parts without losing text. Persist each part and its random ID before sending; retain acknowledged progress across restart and retry. Pace sends and respect Telegram wait responses. Retry temporary failures; expose permanent match-delivery failures for manual retry. Keep failed incident alerts pending without generating recursive alerts. Queue reports while the account is disconnected; email remains independent. Recognize generated report IDs and exclude these reports from matching to prevent feedback loops. Enabling Telegram reports affects new matches and recurring incidents; do not replay old matches. Reports use the configured destination when sending; acknowledged parts are not resent if the destination changes.
 
+Provide independent email and Telegram switches in Settings, applying to matches and incidents immediately and surviving restart. A disabled channel creates no new delivery jobs and holds its existing pending jobs; re-enabling resumes pending work without replaying matches processed while off. An in-flight send may finish. Both channels may be off while matches, positions and incidents continue to be stored. Manual retry must not bypass a disabled channel. Telegram must first be configured and enabled in the protected file. Store UI preferences separately from transport credentials; never modify protected configuration through this API.
+
 Record all operational errors. Email each incident and create its Telegram report when enabled. Group repeated errors from the same incident; retain their occurrence counts. Keep email failure alerts pending until SMTP works. Do not create recursive alerts about failed alert emails. Write errors to stderr if the database fails. A stopped process cannot send its own failure alert.
 
 Delete activity events after 30 days. Retain open incidents and pending delivery jobs. Keep secret values and message bodies out of operational logs.
@@ -104,7 +106,7 @@ Serve the UI and JSON API from one origin. Use HTTPS behind a reverse proxy on a
 
 ## 8. Configuration and operation
 
-File-only settings: password, bind address, public origin, trusted proxy settings, database and session paths, Telegram credentials, SMTP settings, sender and recipient, and Telegram report enable/destination settings. UI settings: source selection, rules, and later posts and schedules. Restart the process after file configuration changes.
+File-only settings: password, bind address, public origin, trusted proxy settings, database and session paths, Telegram credentials, SMTP settings, sender and recipient, and Telegram report enable/destination settings. UI settings: source selection, rules, notification channel switches, and posts and schedules. Restart the process after file configuration changes.
 
 Run one application process. Start recovery and email workers without browser access. Support graceful shutdown and bounded connector retries. Respect Telegram wait responses. Provide a health endpoint without secret values. Use UTC for storage and display. Label displayed times as UTC.
 

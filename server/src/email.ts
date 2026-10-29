@@ -60,7 +60,7 @@ export class EmailWorker {
       });
   }
   async pump() {
-    while (!this.stopped) {
+    while (!this.stopped && this.store.notificationChannelEnabled("email")) {
       const job = this.store.db.get(
         "SELECT * FROM notification_jobs WHERE channel='email' AND status='pending' AND next_attempt_at<=? ORDER BY next_attempt_at,id LIMIT 1",
         now(),

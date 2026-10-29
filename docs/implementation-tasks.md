@@ -1,6 +1,6 @@
 # Implementation Tasks
 
-Reference: `specification.md`. Implementation status and actual check results: [manual-checks.md](manual-checks.md). Tasks 01–11 and 13–22 are implemented. The operator reports Release 1 checks passed except physical-phone testing; desktop Safari passed, and the operator authorized proceeding with the phone check deferred. Live Phase 2 publication checks remain pending. Follow the order below. Each task states its completion check. Use manual checks; do not add an automated test suite or CI in Release 1.
+Reference: `specification.md`. Implementation status and actual check results: [manual-checks.md](manual-checks.md). Tasks 01–11 and 13–23 are implemented. The operator reports Release 1 checks passed except physical-phone testing; desktop Safari passed, and the operator authorized proceeding with the phone check deferred. Live Phase 2 publication checks remain pending. Follow the order below. Each task states its completion check. Use manual checks; do not add an automated test suite or CI in Release 1.
 
 ## Release 1: monitoring
 
@@ -178,6 +178,13 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 - [x] Handle disconnection, waits, temporary/permanent failures, manual retry, graceful shutdown, incident grouping and report feedback prevention. Keep channel delivery independent.
 - [x] Show both channels and partial progress in match details/activity, dashboard counts and safe settings. Document configuration and live checks.
 - Check: receive a match report and an incident report in the configured Telegram destination and email; verify original links, restart recovery, long-report parts and independent failures. Local results and remaining live checks: [manual-checks.md](manual-checks.md), [update-checks.md](update-checks.md).
+
+### 23. Add notification channel switches
+
+- [x] Add independent email/Telegram switches in Settings with authenticated, origin-checked updates, strict validation and restart persistence.
+- [x] Gate new jobs and worker delivery per channel; hold pending work when off, resume on enable and prevent retry bypass. Keep matches/incidents/positions when both are off; permit an in-flight send to finish.
+- [x] Preserve existing defaults on migration. Keep Telegram unavailable until file configuration is enabled; retain credentials and destinations outside UI preferences.
+- Check: toggle each channel independently, reload/restart, and verify new-job suppression and pending-job recovery. Both-off processing still stores matches/incidents. Invalid or unauthorized updates leave preferences unchanged.
 
 ## Later work: ordered backlog
 

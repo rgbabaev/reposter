@@ -64,6 +64,7 @@ export class TelegramNotificationWorker {
   async pump() {
     if (
       this.stopped ||
+      !this.store.notificationChannelEnabled("telegram") ||
       !this.connector.sendNotification ||
       this.connector.status().state !== "connected"
     )

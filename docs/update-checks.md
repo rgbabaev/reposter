@@ -38,6 +38,15 @@ The protected local configuration now enables both match and incident reports to
 - [ ] Trigger an operational incident and repeated occurrences: verify one grouped alert per channel, retained occurrence counts and no recursive notification failures. A Telegram account outage is initially reported through email; its Telegram alert waits for reconnection.
 - [ ] Verify match deletion retains queued reports, historical email jobs still show their old statuses, disabling/re-enabling reports preserves pending work, and both delivery channels work on desktop Safari and a physical phone.
 
+## Notification channel switches (task 23)
+
+Restart after building to apply migration 009. Later switch changes require no restart.
+
+- [ ] In Settings, turn email off while Telegram stays on. New matches/issues notify Telegram only. Existing email jobs remain queued without send attempts.
+- [ ] Reverse the channels and check email-only delivery. Turn both off: matches/issues remain stored and source positions advance without new notification jobs.
+- [ ] Reload and restart to verify switch persistence. Re-enable each channel: its old pending jobs resume, while matches from the off period are not replayed. A report already sending when switched off may finish.
+- [ ] Verify retry cannot bypass an off channel, a failed settings save restores its checkbox state, and Telegram is unavailable until file configuration is enabled. Check keyboard and physical-phone use.
+
 ## Remaining live acceptance
 
 - [ ] Share one rule across two groups and forum/topic overlap. Verify all conditions, optional/required images, one notification/email per item, one shared-rule heading, independent source disable, assignment changes without replay and retained disabled/unassigned rules after last-source removal.
