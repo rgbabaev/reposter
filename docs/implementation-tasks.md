@@ -221,3 +221,8 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 
 - [x] Add combined message-text and historical rule-heading filters before pagination, in a modal opened by Filter next to Select, with Apply/Clear/Cancel controls and selection reset.
 - Check: type/build checks and disposable storage checks cover Unicode text, literal search, combined filters and pagination.
+
+### 28. Share modal dialog behavior
+
+- [x] Extract native dialog lifecycle, scroll locking, accessible naming and optional backdrop dismissal; reuse for match filters and enlarged images.
+- Check: type/build checks and Chromium/WebKit checks cover filter actions, Escape/focus restoration and image navigation/zoom.

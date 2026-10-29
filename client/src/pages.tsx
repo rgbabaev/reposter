@@ -1,7 +1,8 @@
+import { Dialog } from "./dialog";
 import { EntityList, usePageClamp, type BulkAction } from "./entity-list";
 import { MatchImageGallery } from "./match-images";
 import { ruleHeading } from "@monitor/shared";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import type {
   Activity,
   AttachmentType,
@@ -752,19 +753,7 @@ function MatchCard({ match }: { match: Match }) {
   );
 }
 export function MatchesPage() {
-  const dialog = useRef<HTMLDialogElement>(null);
   const [filterOpen, setFilterOpen] = useState(false);
-  useEffect(() => {
-    if (!filterOpen) return;
-    const element = dialog.current!;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    element.showModal();
-    return () => {
-      element.close();
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [filterOpen]);
   const [page, setPage] = useState(1);
   const [text, setText] = useState("");
   const [rules, setRules] = useState<string[]>([]);
@@ -817,7 +806,7 @@ export function MatchesPage() {
           filtered ? "Change or clear the filters to see more matches." : "Enabled sources and rules will add matching messages here."
         }
       />
-      <dialog ref={dialog} class="match-filter-dialog" aria-labelledby="match-filter-title"
+      {filterOpen && <Dialog class="match-filter-dialog" aria-labelledby="match-filter-title"
         onClose={() => setFilterOpen(false)}>
         <form onSubmit={(event) => {
           event.preventDefault();
@@ -860,7 +849,7 @@ export function MatchesPage() {
             <button type="button" onClick={() => setFilterOpen(false)}>Cancel</button>
           </div>
         </form>
-      </dialog>
+      </Dialog>}
     </>
   );
 }

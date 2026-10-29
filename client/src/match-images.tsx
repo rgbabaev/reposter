@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import { Dialog } from "./dialog";
+import { useEffect, useRef, useState } from "preact/hooks";
 import type { Match, MatchImage } from "@monitor/shared";
 import { useRemote } from "./api";
 import { ErrorNotice } from "./components";
@@ -139,7 +140,6 @@ function ImageViewer({
   initialIndex: number;
   onClose: () => void;
 }) {
-  const dialog = useRef<HTMLDialogElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
   const [index, setIndex] = useState(initialIndex);
   const [zoom, setZoom] = useState(1);
@@ -157,25 +157,12 @@ function ImageViewer({
     setAttempt(0);
     stage.current?.scrollTo(0, 0);
   };
-  useLayoutEffect(() => {
-    const element = dialog.current!;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    element.showModal();
-    return () => {
-      element.close();
-      document.body.style.overflow = previousOverflow;
-    };
-  }, []);
   return (
-    <dialog
-      ref={dialog}
+    <Dialog
       class="match-image-dialog"
       aria-label="Message image viewer"
       onClose={onClose}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) dialog.current?.close();
-      }}
+      closeOnBackdrop
       onKeyDown={(event) => {
         if (event.key === "ArrowLeft" && index > 0) {
           event.preventDefault();
@@ -195,7 +182,7 @@ function ImageViewer({
           type="button"
           ref={closeButton}
           autoFocus
-          onClick={() => dialog.current?.close()}
+          onClick={onClose}
         >
           Close image
         </button>
@@ -291,6 +278,6 @@ function ImageViewer({
           </button>
         )}
       </div>
-    </dialog>
+    </Dialog>
   );
 }
