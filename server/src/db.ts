@@ -7,6 +7,9 @@ export class Storage {
   constructor(path: string) {
     mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
     this.db = new DatabaseSync(path);
+    this.db.function("normalized_text", { deterministic: true }, (value) =>
+      String(value ?? "").normalize("NFC").toLowerCase(),
+    );
     chmodSync(path, 0o600);
     this.db.exec(
       "PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;",

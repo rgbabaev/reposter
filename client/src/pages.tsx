@@ -1,7 +1,7 @@
 import { EntityList, usePageClamp, type BulkAction } from "./entity-list";
 import { MatchImageGallery } from "./match-images";
 import { ruleHeading } from "@monitor/shared";
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import type {
   Activity,
   AttachmentType,
@@ -11,6 +11,7 @@ import type {
   NotificationJob,
   NotificationChannels,
   Match,
+  MatchPage,
   Page,
   Rule,
   RuleInput,
@@ -751,8 +752,32 @@ function MatchCard({ match }: { match: Match }) {
   );
 }
 export function MatchesPage() {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
+  useEffect(() => {
+    if (!filterOpen) return;
+    const element = dialog.current!;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    element.showModal();
+    return () => {
+      element.close();
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [filterOpen]);
   const [page, setPage] = useState(1);
-  const remote = useRemote<Page<Match>>(`/matches?page=${page}`, true);
+  const [text, setText] = useState("");
+  const [rules, setRules] = useState<string[]>([]);
+  const [filters, setFilters] = useState<{ text: string; rules: string[] }>({ text: "", rules: [] });
+  const parameters = new URLSearchParams({ page: String(page), text: filters.text });
+  filters.rules.forEach((rule) => parameters.append("rule", rule));
+  const query = parameters.toString();
+  const remote = useRemote<MatchPage>(`/matches?${query}`, true);
+  const [ruleNames, setRuleNames] = useState<string[]>([]);
+  useEffect(() => {
+    if (remote.data) setRuleNames(remote.data.ruleNames);
+  }, [remote.data]);
+  const filtered = !!(filters.text || filters.rules.length);
   const bulkActions: BulkAction<Match>[] = [
     {
       label: "Delete",
@@ -772,15 +797,70 @@ export function MatchesPage() {
         error={remote.error}
         refresh={remote.refresh}
         onPage={setPage}
-        scope={page}
+        scope={query}
         actions={bulkActions}
+        filters={
+          <button type="button" class={filtered ? "filter-button active" : "filter-button"}
+            aria-haspopup="dialog" aria-label={filtered ? "Filter, filters are on" : "Filter"}
+            onClick={() => {
+            setText(filters.text);
+            setRules([...filters.rules]);
+            setFilterOpen(true);
+          }}>
+            Filter{filtered && <span class="filter-status" aria-hidden="true">On</span>}
+          </button>
+        }
         itemLabel={(match) => match.sourceName}
         renderItem={(match) => <MatchCard match={match} />}
-        emptyTitle="No matched messages"
+        emptyTitle={filtered ? "No matches for these filters" : "No matched messages"}
         emptyDescription={
-          "Enabled sources and rules will add matching messages here."
+          filtered ? "Change or clear the filters to see more matches." : "Enabled sources and rules will add matching messages here."
         }
       />
+      <dialog ref={dialog} class="match-filter-dialog" aria-labelledby="match-filter-title"
+        onClose={() => setFilterOpen(false)}>
+        <form onSubmit={(event) => {
+          event.preventDefault();
+          setPage(1);
+          setFilters({ text: text.trim(), rules });
+          setFilterOpen(false);
+        }}>
+          <h2 id="match-filter-title">Filter matches</h2>
+          <div class="field">
+            <label for="match-text">Message text</label>
+            <input id="match-text" type="search" value={text}
+              onInput={(event) => setText(event.currentTarget.value)} />
+          </div>
+          <fieldset class="match-rule-options">
+            <legend>Matched rules</legend>
+            <p class="muted">Match any selected rule. Leave all unchecked for all rules.</p>
+            {ruleNames.map((name) => (
+              <label class="check" key={name}>
+                <input type="checkbox" checked={rules.includes(name)}
+                  onChange={(event) => {
+                    const checked = event.currentTarget.checked;
+                    setRules((selected) => checked
+                      ? [...selected, name]
+                      : selected.filter((rule) => rule !== name));
+                  }} />
+                {name}
+              </label>
+            ))}
+            {!ruleNames.length && <p>No saved rules</p>}
+          </fieldset>
+          <div class="actions">
+            <button type="submit">Apply filters</button>
+            <button type="button" onClick={() => {
+              setText("");
+              setRules([]);
+              setFilters({ text: "", rules: [] });
+              setPage(1);
+              setFilterOpen(false);
+            }}>Clear filters</button>
+            <button type="button" onClick={() => setFilterOpen(false)}>Cancel</button>
+          </div>
+        </form>
+      </dialog>
     </>
   );
 }

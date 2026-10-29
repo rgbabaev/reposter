@@ -140,7 +140,7 @@ export class Api {
           return;
         }
         if (path === "/api/matches" && req.method === "GET") {
-          json(res, 200, this.store.matches(page, pageSize));
+          json(res, 200, this.store.matches(page, pageSize, url.searchParams.get("text") || "", url.searchParams.getAll("rule").filter(Boolean)));
           return;
         }
         const imagesRoute = path.match(

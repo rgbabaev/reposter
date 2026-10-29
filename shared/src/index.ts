@@ -86,6 +86,9 @@ export interface Match {
   delivery?: NotificationJob;
   deliveries?: NotificationJob[];
 }
+export interface MatchPage extends Page<Match> {
+  ruleNames: string[];
+}
 export interface MatchImage {
   externalItemId: ID;
 }

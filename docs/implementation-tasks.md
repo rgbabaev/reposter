@@ -195,7 +195,7 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 
 ## Later work: ordered backlog
 
-1. Add rule tests against recent messages, search, read status, bookmarks, and archives.
+1. Add rule tests against recent messages, read status, bookmarks, and archives.
 2. Add notification rate limits and email digests.
 3. Add nested conditions, more textual fields, attachment content, and media inspection.
 4. Add post import from Telegram messages.
@@ -216,3 +216,8 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 - [x] Consolidate entity list rendering, selection, loading/errors, empty states and pagination in a configurable component.
 - [x] Migrate all seven entity lists while preserving domain actions and whole-tile selection.
 - Check: build/type checks and disposable Chromium/WebKit checks cover existing selection, bulk actions, pagination and image interaction. Filters and view settings are deferred.
+
+### 27. Filter matched messages
+
+- [x] Add combined message-text and historical rule-heading filters before pagination, in a modal opened by Filter next to Select, with Apply/Clear/Cancel controls and selection reset.
+- Check: type/build checks and disposable storage checks cover Unicode text, literal search, combined filters and pagination.

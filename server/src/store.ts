@@ -6,6 +6,7 @@ import type {
   Rule,
   RuleInput,
   Match,
+  MatchPage,
   IncomingItem,
   NotificationJob,
   NotificationChannel,
@@ -329,17 +330,28 @@ export class Store {
       );
     });
   }
-  matches(page = 1, pageSize = 25): Page<Match> {
+  matches(page = 1, pageSize = 25, text = "", rules: string[] = []): MatchPage {
+    const where = `WHERE instr(normalized_text(json_extract(snapshot, '$.text')), ?) > 0
+      AND (? = '[]' OR EXISTS (
+        SELECT 1 FROM json_each(matches.snapshot, '$.ruleNames')
+        WHERE value IN (SELECT value FROM json_each(?))
+      ))`;
+    const selectedRules = JSON.stringify(rules);
+    const parameters = [text.trim().normalize("NFC").toLowerCase(), selectedRules, selectedRules];
     const rows = this.db.all(
-      "SELECT snapshot FROM matches ORDER BY matched_at DESC,id DESC LIMIT ? OFFSET ?",
+      `SELECT snapshot FROM matches ${where} ORDER BY matched_at DESC,id DESC LIMIT ? OFFSET ?`,
+      ...parameters,
       pageSize,
       (page - 1) * pageSize,
     );
     return {
       items: rows.map((r) => this.withDelivery(JSON.parse(r.snapshot))),
-      total: Number(this.db.get("SELECT count(*) n FROM matches")!.n),
+      total: Number(this.db.get(`SELECT count(*) n FROM matches ${where}`, ...parameters)!.n),
       page,
       pageSize,
+      ruleNames: this.db.all(
+        "SELECT DISTINCT value FROM matches, json_each(matches.snapshot, '$.ruleNames') ORDER BY value",
+      ).map((row) => String(row.value)),
     };
   }
   private withDelivery(match: Match): Match {
