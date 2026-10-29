@@ -1,3 +1,5 @@
+import { findTelegramMatchImages, downloadTelegramMatchImage } from "./match-images.js";
+import type { MatchImageRequest } from "../../connector.js";
 import { sendTelegramReport } from "./notifications.js";
 import { NewMessage } from "telegram/events/NewMessage.js";
 import type { Attachment, Sender } from "@monitor/shared";
@@ -175,6 +177,29 @@ export class TelegramConnector implements Connector {
     if (this.timer) clearInterval(this.timer);
     await this.client?.destroy();
     this.state = "disconnected";
+  }
+  async findMatchImages(request: MatchImageRequest, signal: AbortSignal) {
+    try {
+      return await findTelegramMatchImages(
+        this.ready(), request,
+        AbortSignal.any([signal, this.cancellation.signal, AbortSignal.timeout(20000)]),
+      );
+    } catch (error) {
+      throw this.providerError(error);
+    }
+  }
+  async downloadMatchImage(
+    externalSourceId: string, externalItemId: string,
+    variant: "preview" | "full", signal: AbortSignal,
+  ) {
+    try {
+      return await downloadTelegramMatchImage(
+        this.ready(), externalSourceId, externalItemId, variant,
+        AbortSignal.any([signal, this.cancellation.signal, AbortSignal.timeout(20000)]),
+      );
+    } catch (error) {
+      throw this.providerError(error);
+    }
   }
   async sendNotification(request: NotificationRequest, signal: AbortSignal) {
     try {
@@ -407,7 +432,9 @@ export class TelegramConnector implements Connector {
           text: message.message || "",
           sender: details,
           url,
-          attachments: attachments(message),
+          attachments: attachments(message).map(attachment => ({
+            ...attachment, externalItemId: String(message.id),
+          })),
         };
       }
     } catch (error) {

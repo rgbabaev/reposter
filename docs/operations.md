@@ -67,6 +67,14 @@ Preparation failures and explicit Telegram client-error rejections become **fail
 
 Restart after building to apply the publication migration and start workers. Increase existing reverse-proxy request limits to 28 MiB for image posts; other API bodies retain their smaller application limits. No browser is needed for schedules or email workers.
 
+## Match image previews
+
+Matched Messages and match details load image thumbnails as they become visible. Click a thumbnail for an enlarged image; use Zoom in/out, Fit, Previous/Next, arrow keys or Escape. Retry controls handle temporary failures. Viewing requires the normal authenticated session.
+
+Monitoring and notifications still use metadata/text only. The UI downloads JPEG, PNG, GIF or WebP images on demand, up to 1 MiB per preview and 10 MiB per enlarged image, with two concurrent downloads. A persistent 100 MiB least-recently-used cache can serve viewed images while Telegram is disconnected. It is a cache, not a media archive: evicted, deleted or inaccessible originals may be unavailable. Removing a source keeps matched images; deleting a match removes its references/cache.
+
+Migration 010 preserves existing matches. New album snapshots retain each image's message ID. Older albums use a bounded 100-message lookup near the saved position or message time; some old/deleted images may remain unavailable. No image content is analyzed or attached to email/Telegram reports.
+
 ## Notification channel switches
 
 Use **More → Settings → Notification channels** to switch email and Telegram independently for matches and incidents. Changes apply immediately and survive restart. Telegram's switch is available once its protected-file configuration is enabled and the application restarted.

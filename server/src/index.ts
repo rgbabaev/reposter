@@ -77,6 +77,7 @@ async function main() {
     schedules.stop();
     const pending = new Set([
       "HTTP",
+      "match images",
       "Telegram",
       "monitoring",
       "email",
@@ -106,6 +107,7 @@ async function main() {
         track("Telegram notifications", telegramNotifications.stop()),
         track("publication", publications.stop()),
         track("HTTP", stoppedHttp),
+        track("match images", api.stop()),
       ]);
       store.db.close();
       lock.close();

@@ -48,7 +48,7 @@ List accessible groups, channels, private chats, and forum topics. Let the user 
 
 On first enable, save the current source position. Exclude earlier messages. On re-enable, start from a new position; exclude the disabled period. After a service or network outage, recover all available items after the saved position. Recovery has no age limit. Report lost access or unavailable history. Do not promise recovery of deleted or inaccessible messages.
 
-Ignore message edits and deletion events. Inspect message text and captions. Read attachment types from metadata. Do not download or inspect media content in Release 1.
+Ignore message edits and deletion events. Inspect message text and captions. Read attachment types from metadata without downloading media during monitoring or rule evaluation. For the web UI, download matched image previews and enlarged images on demand; do not analyze their content.
 
 ## 5. Rules and matches
 
@@ -98,7 +98,7 @@ Use English, a light theme, native-style controls, clear spacing, and iOS-style 
 
 Release 1 pages: Dashboard, Sources, Rules, Matched Messages, Connectors, Activity Log, and Settings. Add Posts and Schedules in Phase 2. Use bottom navigation for frequent actions and a More page for other pages. Show loading, empty, error, and disconnected states.
 
-Show recent matches in pages, newest first. Provide match details and manual deletion. Deletion must not remove Telegram content or cancel notifications already queued. Search, read status, bookmarks, archives, and rule testing are later work.
+Show recent matches in pages, newest first. Provide match details and manual deletion. Deletion must not remove Telegram content or cancel notifications already queued. Show lazy image previews in match lists and details with click/touch zoom, album navigation, keyboard controls and an accessible modal viewer. Serve images only through authenticated, match-scoped routes. Preserve per-image message references for new albums; use a bounded history lookup for older albums. Cache at most 100 MiB of recently viewed JPEG, PNG, GIF and WebP data, with 1 MiB preview and 10 MiB enlarged-image limits. Cached images may work offline; deleted/inaccessible originals or unsupported images show a retryable unavailable state. Deleting a match removes its image cache. Search, read status, bookmarks, archives, and rule testing are later work.
 
 Read the access password from a protected configuration file. Do not send it to the client build. Use random session tokens; store token hashes on the server. Sessions expire after seven days. Provide logout. Use HttpOnly, SameSite cookies and Secure cookies with HTTPS. Check request origin for writes. Limit login attempts and request sizes. Return only safe settings through the API.
 

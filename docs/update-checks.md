@@ -47,6 +47,15 @@ Restart after building to apply migration 009. Later switch changes require no r
 - [ ] Reload and restart to verify switch persistence. Re-enable each channel: its old pending jobs resume, while matches from the off period are not replayed. A report already sending when switched off may finish.
 - [ ] Verify retry cannot bypass an off channel, a failed settings save restores its checkbox state, and Telegram is unavailable until file configuration is enabled. Check keyboard and physical-phone use.
 
+## Matched image previews (task 24)
+
+Restart after building to apply migration 010.
+
+- [ ] Open current and older single-image/album matches. Confirm thumbnail order and original images in the list and details, including forum topics and image documents.
+- [ ] Click/tap to enlarge; check zoom/fit, scrolling, previous/next, arrow keys, Escape and restored focus in Safari/Chromium and on a phone.
+- [ ] Restart or disconnect Telegram after viewing an image: cached previews/full images remain available. Uncached/deleted/inaccessible/unsupported images show unavailable/retry states. Large originals respect the 10 MiB limit.
+- [ ] Remove a source and retain its matches/images; then delete a match and confirm its image URLs stop working. Check monitoring, album deduplication and text-only notifications remain unchanged.
+
 ## Remaining live acceptance
 
 - [ ] Share one rule across two groups and forum/topic overlap. Verify all conditions, optional/required images, one notification/email per item, one shared-rule heading, independent source disable, assignment changes without replay and retained disabled/unassigned rules after last-source removal.

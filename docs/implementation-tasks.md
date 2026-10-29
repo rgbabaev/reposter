@@ -1,6 +1,6 @@
 # Implementation Tasks
 
-Reference: `specification.md`. Implementation status and actual check results: [manual-checks.md](manual-checks.md). Tasks 01–11 and 13–23 are implemented. The operator reports Release 1 checks passed except physical-phone testing; desktop Safari passed, and the operator authorized proceeding with the phone check deferred. Live Phase 2 publication checks remain pending. Follow the order below. Each task states its completion check. Use manual checks; do not add an automated test suite or CI in Release 1.
+Reference: `specification.md`. Implementation status and actual check results: [manual-checks.md](manual-checks.md). Tasks 01–11 and 13–24 are implemented. The operator reports Release 1 checks passed except physical-phone testing; desktop Safari passed, and the operator authorized proceeding with the phone check deferred. Live Phase 2 publication checks remain pending. Follow the order below. Each task states its completion check. Use manual checks; do not add an automated test suite or CI in Release 1.
 
 ## Release 1: monitoring
 
@@ -185,6 +185,13 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 - [x] Gate new jobs and worker delivery per channel; hold pending work when off, resume on enable and prevent retry bypass. Keep matches/incidents/positions when both are off; permit an in-flight send to finish.
 - [x] Preserve existing defaults on migration. Keep Telegram unavailable until file configuration is enabled; retain credentials and destinations outside UI preferences.
 - Check: toggle each channel independently, reload/restart, and verify new-job suppression and pending-job recovery. Both-off processing still stores matches/incidents. Invalid or unauthorized updates leave preferences unchanged.
+
+### 24. Add matched image previews and zoom
+
+- [x] Retain image message IDs in new match/album metadata. Add optional connector image discovery/download operations with bounded legacy album lookup, size limits and cancellation.
+- [x] Add authenticated, match-scoped preview/full-image routes and a persistent 100 MiB cache. Coalesce duplicate requests, limit concurrent downloads and remove cached images with match deletion.
+- [x] Show lazy thumbnails in match lists/details and a modal zoom viewer with album navigation, touch/keyboard controls, Escape/focus restoration and unavailable/retry states.
+- Check: view a single image and album in current/older matches, zoom/navigate, restart/offline with cached images, and delete the match. Confirm unsupported/deleted images and source removal do not break matching or notifications. Local results and remaining live checks are in [manual-checks.md](manual-checks.md) and [update-checks.md](update-checks.md).
 
 ## Later work: ordered backlog
 

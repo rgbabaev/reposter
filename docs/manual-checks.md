@@ -1,6 +1,6 @@
 # Manual checks
 
-Updated 2026-10-25. Tasks 01–11 and 13–23 implemented. Operator reports Release 1 acceptance checks passed except physical-phone testing and authorized Phase 2 with that check deferred. Publication, scheduled replacement, Pause/Resume and Run Now checks are operator-reported passed; full Phase 2 acceptance remains pending.
+Updated 2026-10-25. Tasks 01–11 and 13–24 implemented. Operator reports Release 1 acceptance checks passed except physical-phone testing and authorized Phase 2 with that check deferred. Publication, scheduled replacement, Pause/Resume and Run Now checks are operator-reported passed; full Phase 2 acceptance remains pending.
 
 ## Verified locally
 
@@ -129,3 +129,11 @@ On 2026-10-28 the operator requested the ReposterNotifications chat instead. A s
 Disposable storage/worker checks passed independent switches, suppressed new jobs, held pending attempts, restart persistence, resumed delivery without replay, disabled-retry rejection, both-off match/incident storage and position advancement, atomic validation, unavailable Telegram and in-flight completion followed by stopping the next send. Existing Telegram/email delivery smoke checks still passed.
 
 Chromium and WebKit at 390/320px passed Settings toggles, reload persistence, keyboard use, 44px labels, both-off status, rollback after failed saves, unavailable Telegram, and authenticated/origin-protected validation. Build, type and whitespace checks passed. Live acceptance remains in [update-checks.md](update-checks.md).
+
+## Matched image previews (2026-10-29)
+
+Disposable SQLite and simulated connectors passed album references/order, scoped image access, coalesced downloads, persistent/offline cache, cache eviction/limits, unsupported/oversized/deleted images, legacy album lookup, source removal, match-deletion races/cascades and cancellation. Real GramJS photo/document fixtures verified thumbnail/full selection, bounded album lookup and size guards without live downloads.
+
+Chromium and WebKit at 390/320px passed authenticated lazy list/detail previews, click/touch zoom, scrolling/fit, album controls and arrow keys, Escape/focus restoration, cached reuse and unavailable-image retry, without page errors or horizontal overflow. Production build, type and whitespace checks passed. Live Telegram and physical-phone checks remain in [update-checks.md](update-checks.md).
+
+Zoom correction (2026-10-29): the installed GramJS downloader does not accept a `PhotoSizeProgressive` object as its thumbnail argument, returning empty data for many full-size photos. Normalize that descriptor to a supported `PhotoSize` while preserving type, dimensions and byte limit. A regression fixture failed before the fix and passed afterward through the real GramJS download pipeline with stubbed file RPC. Chromium/WebKit zoom checks now also use progressive-photo fixtures through that pipeline. Build, type and whitespace checks passed. Restart the server and retry the image; failed downloads were not cached.

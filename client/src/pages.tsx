@@ -1,3 +1,4 @@
+import { MatchImageGallery } from "./match-images";
 import { ruleHeading } from "@monitor/shared";
 import { useEffect, useState } from "preact/hooks";
 import type {
@@ -734,6 +735,7 @@ function MatchCard({ match }: { match: Match }) {
           ? match.text.slice(0, 280) + (match.text.length > 280 ? "…" : "")
           : "No text available"}
       </p>
+      <MatchImageGallery match={match} />
       <div class="tags" aria-label="Matched rules">
         {match.ruleNames.map((name, index) => (
           <span class="tag" key={index}>
@@ -858,6 +860,7 @@ export function MatchDetail({ id }: { id: string }) {
               <div class="message-body">
                 {match.text || "No text available"}
               </div>
+              <MatchImageGallery match={match} />
             </article>
             <section class="card" aria-labelledby="delivery-title">
               <h2 id="delivery-title">Notification delivery</h2>

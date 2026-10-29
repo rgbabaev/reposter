@@ -10,6 +10,7 @@ export type AttachmentType =
   | "animation"
   | "other";
 export interface Attachment {
+  externalItemId?: ID;
   type: AttachmentType;
   name?: string;
   mimeType?: string;
@@ -73,6 +74,7 @@ export interface Match {
   accountId: ID;
   externalSourceId: ID;
   identity: ID;
+  externalItemId?: ID;
   sourceName: string;
   sender?: Sender;
   text: string;
@@ -83,6 +85,9 @@ export interface Match {
   attachments: Attachment[];
   delivery?: NotificationJob;
   deliveries?: NotificationJob[];
+}
+export interface MatchImage {
+  externalItemId: ID;
 }
 export interface NotificationDestination {
   externalId: ID;

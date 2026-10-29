@@ -251,6 +251,7 @@ export class Store {
             accountId: item.accountId,
             externalSourceId: item.externalSourceId,
             identity: item.identity,
+            externalItemId: item.externalItemId,
             sourceName:
               sources
                 .filter(

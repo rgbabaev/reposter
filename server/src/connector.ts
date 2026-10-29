@@ -5,6 +5,7 @@ import type {
   ID,
   PublicationDestination,
   NotificationDestination,
+  MatchImage,
 } from "@monitor/shared";
 /** Each adapter owns authorization, provider types, retry policy and recovery errors. */
 export interface Connector {
@@ -19,6 +20,16 @@ export interface Connector {
   stop(): Promise<void>;
   currentPosition(externalSourceId: ID): Promise<string>;
   recover(externalSourceId: ID, after: string): AsyncIterable<IncomingItem>;
+  findMatchImages?(
+    request: MatchImageRequest,
+    signal: AbortSignal,
+  ): Promise<MatchImage[]>;
+  downloadMatchImage?(
+    externalSourceId: ID,
+    externalItemId: ID,
+    variant: "preview" | "full",
+    signal: AbortSignal,
+  ): Promise<Uint8Array>;
   sendNotification?(
     request: NotificationRequest,
     signal: AbortSignal,
@@ -36,6 +47,12 @@ export interface Connector {
     ids: ID[],
     since: string,
   ): Promise<void>;
+}
+export interface MatchImageRequest {
+  externalSourceId: ID;
+  identity: ID;
+  externalItemId?: ID;
+  eventTime: string;
 }
 export interface NotificationRequest {
   destination: NotificationDestination;

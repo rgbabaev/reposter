@@ -1,3 +1,4 @@
+import { MatchImages } from "./match-images.js";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, resolve, sep } from "node:path";
@@ -17,6 +18,7 @@ import type { TelegramNotificationWorker } from "./telegram-notifications.js";
 import type { Schedules } from "./schedules.js";
 export class Api {
   private auth: Auth;
+  private matchImages: MatchImages;
   private publicationApi?: PublicationApi;
   constructor(
     private config: Config,
@@ -29,8 +31,12 @@ export class Api {
     private telegramNotifications?: TelegramNotificationWorker,
   ) {
     this.auth = new Auth(config, store);
+    this.matchImages = new MatchImages(store, connector);
     if (publications && schedules)
       this.publicationApi = new PublicationApi(publications, schedules);
+  }
+  async stop() {
+    await this.matchImages.stop();
   }
   async handle(req: IncomingMessage, res: ServerResponse) {
     securityHeaders(res);
@@ -135,6 +141,31 @@ export class Api {
         }
         if (path === "/api/matches" && req.method === "GET") {
           json(res, 200, this.store.matches(page, pageSize));
+          return;
+        }
+        const imagesRoute = path.match(
+          /^\/api\/matches\/([^/]+)\/images(?:\/([^/]+))?$/,
+        );
+        if (imagesRoute && req.method === "GET") {
+          if (!imagesRoute[2]) {
+            json(res, 200, await this.matchImages.list(imagesRoute[1]!));
+            return;
+          }
+          const variant = url.searchParams.get("size") || "preview";
+          if (variant !== "preview" && variant !== "full")
+            throw new HttpError(400, "Image size must be preview or full.");
+          const image = await this.matchImages.get(
+            imagesRoute[1]!,
+            imagesRoute[2],
+            variant,
+          );
+          res.writeHead(200, {
+            "Content-Type": image.mimeType,
+            "Content-Length": image.data.length,
+            "Cache-Control": "no-store",
+            "Content-Disposition": "inline",
+          });
+          res.end(image.data);
           return;
         }
         const matchRoute = path.match(/^\/api\/matches\/([^/]+)$/);

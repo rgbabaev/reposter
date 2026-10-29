@@ -1,0 +1,3 @@
+CREATE TABLE match_image_refs (match_id TEXT NOT NULL REFERENCES matches(id) ON DELETE CASCADE, external_item_id TEXT NOT NULL, ordinal INTEGER NOT NULL, PRIMARY KEY(match_id,external_item_id), UNIQUE(match_id,ordinal));
+CREATE TABLE match_image_cache (match_id TEXT NOT NULL, external_item_id TEXT NOT NULL, variant TEXT NOT NULL CHECK(variant IN ('preview','full')), mime_type TEXT NOT NULL, data BLOB NOT NULL, accessed_at TEXT NOT NULL, PRIMARY KEY(match_id,external_item_id,variant), FOREIGN KEY(match_id,external_item_id) REFERENCES match_image_refs(match_id,external_item_id) ON DELETE CASCADE);
+CREATE INDEX match_image_cache_access ON match_image_cache(accessed_at);
