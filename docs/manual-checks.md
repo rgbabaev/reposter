@@ -149,3 +149,10 @@ Select-mode follow-up: bulk actions now clear selection and hide checkboxes on c
 Selection layout follow-up: Chromium/WebKit at 390/320 px verified unchanged card bounds and heading positions when entering/leaving Select mode, checkboxes within card bounds, and reachable pagination alongside the floating action toolbar. Existing bulk action and automatic-exit fixtures passed. Production build passed.
 
 Whole-tile selection follow-up: Chromium/WebKit fixtures at 390/320 px passed selection toggles from card headings and underlying link/button positions without navigation or mutation requests. Touching match image previews toggled selection without opening the viewer; after Cancel, normal image zoom worked. Card geometry and existing bulk behavior remained unchanged. Production build and whitespace checks passed.
+
+### Reusable entity list extraction
+
+- Build, type checks, formatting and whitespace checks passed.
+- Disposable Chromium/WebKit fixtures passed shared loading/empty/error/retry states, activity-view selection reset, all existing bulk-action checks, stable 320/390px layouts, whole-tile click suppression, partial failures and final-page clamping.
+- Image fixtures passed touch selection, normal zoom after leaving selection, lazy previews, gallery navigation and image retries in both engines. No live Telegram operations were performed.
+- Live operator spot checks are listed in `update-checks.md`.

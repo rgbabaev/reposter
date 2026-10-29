@@ -1,6 +1,6 @@
 # Implementation Tasks
 
-Reference: `specification.md`. Implementation status and actual check results: [manual-checks.md](manual-checks.md). Tasks 01–11 and 13–25 are implemented. The operator reports Release 1 checks passed except physical-phone testing; desktop Safari passed, and the operator authorized proceeding with the phone check deferred. Live Phase 2 publication checks remain pending. Follow the order below. Each task states its completion check. Use manual checks; do not add an automated test suite or CI in Release 1.
+Reference: `specification.md`. Implementation status and actual check results: [manual-checks.md](manual-checks.md). Tasks 01–11 and 13–26 are implemented. The operator reports Release 1 checks passed except physical-phone testing; desktop Safari passed, and the operator authorized proceeding with the phone check deferred. Live Phase 2 publication checks remain pending. Follow the order below. Each task states its completion check. Use manual checks; do not add an automated test suite or CI in Release 1.
 
 ## Release 1: monitoring
 
@@ -210,3 +210,9 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 - [x] Support entity actions through existing APIs, sequential partial results and automatic exit from Select mode.
 - [x] Add guarded history deletion, retaining pending work, schedule tracking and deleted Telegram report identities.
 - Check: verify mixed-success batches, selection reset across pages/views, deletion on the final page, and mobile/keyboard operation. See [manual-checks.md](manual-checks.md).
+
+### 26. Extract reusable entity list
+
+- [x] Consolidate entity list rendering, selection, loading/errors, empty states and pagination in a configurable component.
+- [x] Migrate all seven entity lists while preserving domain actions and whole-tile selection.
+- Check: build/type checks and disposable Chromium/WebKit checks cover existing selection, bulk actions, pagination and image interaction. Filters and view settings are deferred.

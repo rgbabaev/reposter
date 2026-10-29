@@ -1,4 +1,4 @@
-import { useBulkSelection, usePageClamp } from "./bulk-selection";
+import { EntityList, type BulkAction } from "./entity-list";
 import { postHeading, scheduleHeading } from "@monitor/shared";
 import { useEffect, useState } from "preact/hooks";
 import type {
@@ -10,7 +10,6 @@ import type {
 } from "@monitor/shared";
 import { api, useAction, useRemote, utc } from "./api";
 import {
-  Empty,
   ErrorNotice,
   Link,
   Loading,
@@ -40,8 +39,7 @@ function describe(calendar: CalendarSchedule) {
 export function SchedulesPage() {
   const [page, setPage] = useState(1);
   const remote = useRemote<Page<Schedule>>(`/schedules?page=${page}`, true);
-  usePageClamp(remote.data, setPage);
-  const bulk = useBulkSelection(remote.data?.items, page, remote.refresh, [
+  const bulkActions: BulkAction<Schedule>[] = [
     {
       label: "Delete",
       eligible: (schedule) => !schedule.blockedRunId,
@@ -55,7 +53,7 @@ export function SchedulesPage() {
       run: (schedule: Schedule) =>
         api(`/schedules/${schedule.id}`, { method: "PATCH", body: { paused } }),
     })),
-  ]);
+  ];
   return (
     <>
       <PageHeading
@@ -67,28 +65,23 @@ export function SchedulesPage() {
           </Link>
         }
       />
-      {bulk.toolbar}
-      <ErrorNotice message={remote.error} onRetry={remote.refresh} />
-      {remote.loading && <Loading />}
-      {remote.data && (
-        <>
-          {!remote.data.items.length && (
-            <Empty title="No schedules yet">
-              Create a post, then choose its destination and recurring time.
-            </Empty>
-          )}
-          <div class="stack">
-            {remote.data.items.map((schedule) =>
-              bulk.row(
-                schedule,
-                <ScheduleCard schedule={schedule} refresh={remote.refresh} />,
-                scheduleHeading(schedule),
-              ),
-            )}
-          </div>
-          <Pager data={remote.data} onPage={setPage} />
-        </>
-      )}
+      <EntityList
+        data={remote.data}
+        loading={remote.loading}
+        error={remote.error}
+        refresh={remote.refresh}
+        onPage={setPage}
+        scope={page}
+        actions={bulkActions}
+        itemLabel={(schedule) => scheduleHeading(schedule)}
+        renderItem={(schedule) => (
+          <ScheduleCard schedule={schedule} refresh={remote.refresh} />
+        )}
+        emptyTitle="No schedules yet"
+        emptyDescription={
+          "Create a post, then choose its destination and recurring time."
+        }
+      />
       <Link class="button" href="/publications">
         Publication history
       </Link>

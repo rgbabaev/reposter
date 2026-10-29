@@ -1,4 +1,4 @@
-import { useBulkSelection, usePageClamp } from "./bulk-selection";
+import { EntityList, type BulkAction } from "./entity-list";
 import { PostTextEditor } from "./post-text-editor";
 import type { TextEntity } from "@monitor/shared";
 import { postHeading } from "@monitor/shared";
@@ -12,13 +12,11 @@ import type {
 } from "@monitor/shared";
 import { api, useAction, useRemote, utc } from "./api";
 import {
-  Empty,
   ErrorNotice,
   Link,
   Loading,
   navigate,
   PageHeading,
-  Pager,
 } from "./components";
 
 type DraftImage =
@@ -27,15 +25,14 @@ type DraftImage =
 export function PostsPage() {
   const [page, setPage] = useState(1);
   const remote = useRemote<Page<Post>>(`/posts?page=${page}`, true);
-  usePageClamp(remote.data, setPage);
-  const bulk = useBulkSelection(remote.data?.items, page, remote.refresh, [
+  const bulkActions: BulkAction<Post>[] = [
     {
       label: "Delete",
       confirm:
         "Published Telegram messages remain. Posts referenced by schedules or publication history cannot be deleted.",
       run: (post) => api(`/posts/${post.id}`, { method: "DELETE" }),
     },
-  ]);
+  ];
   return (
     <>
       <PageHeading
@@ -47,29 +44,21 @@ export function PostsPage() {
           </Link>
         }
       />
-      {bulk.toolbar}
-      <ErrorNotice message={remote.error} onRetry={remote.refresh} />
-      {remote.loading && <Loading />}
-      {remote.data && (
-        <>
-          {!remote.data.items.length && (
-            <Empty title="No posts yet">
-              Create a post, then use a schedule to choose where and when to
-              publish it.
-            </Empty>
-          )}
-          <div class="stack">
-            {remote.data.items.map((post) =>
-              bulk.row(
-                post,
-                <PostCard post={post} refresh={remote.refresh} />,
-                postHeading(post),
-              ),
-            )}
-          </div>
-          <Pager data={remote.data} onPage={setPage} />
-        </>
-      )}
+      <EntityList
+        data={remote.data}
+        loading={remote.loading}
+        error={remote.error}
+        refresh={remote.refresh}
+        onPage={setPage}
+        scope={page}
+        actions={bulkActions}
+        itemLabel={(post) => postHeading(post)}
+        renderItem={(post) => <PostCard post={post} refresh={remote.refresh} />}
+        emptyTitle="No posts yet"
+        emptyDescription={
+          "Create a post, then use a schedule to choose where and when to publish it."
+        }
+      />
       <Link class="button" href="/publications">
         Publication history
       </Link>
@@ -338,8 +327,7 @@ export function PublicationsPage() {
     `/publications?page=${page}`,
     true,
   );
-  usePageClamp(remote.data, setPage);
-  const bulk = useBulkSelection(remote.data?.items, page, remote.refresh, [
+  const bulkActions: BulkAction<PublicationRun>[] = [
     {
       label: "Delete",
       eligible: (run) => ["sent", "partial", "cancelled"].includes(run.status),
@@ -358,31 +346,26 @@ export function PublicationsPage() {
       confirm: "Messages already deleted remain deleted.",
       run: (run) => api(`/publications/${run.id}/cancel`, { method: "POST" }),
     },
-  ]);
+  ];
   return (
     <>
       <PageHeading
         title="Publication history"
         description="Sent messages, replacement progress and results needing review."
       />
-      {bulk.toolbar}
-      <ErrorNotice message={remote.error} onRetry={remote.refresh} />
-      {remote.loading && <Loading />}
-      {remote.data && (
-        <>
-          {!remote.data.items.length && <Empty title="No publications yet" />}
-          <div class="stack">
-            {remote.data.items.map((run) =>
-              bulk.row(
-                run,
-                <RunCard run={run} refresh={remote.refresh} />,
-                run.postName,
-              ),
-            )}
-          </div>
-          <Pager data={remote.data} onPage={setPage} />
-        </>
-      )}
+      <EntityList
+        data={remote.data}
+        loading={remote.loading}
+        error={remote.error}
+        refresh={remote.refresh}
+        onPage={setPage}
+        scope={page}
+        actions={bulkActions}
+        itemLabel={(run) => run.postName}
+        renderItem={(run) => <RunCard run={run} refresh={remote.refresh} />}
+        emptyTitle="No publications yet"
+        emptyDescription={undefined}
+      />
     </>
   );
 }

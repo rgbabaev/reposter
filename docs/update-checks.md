@@ -75,3 +75,5 @@ Record outcomes in `manual-checks.md`. SMTP acceptance does not establish inbox 
 - Retry failed deliveries/publications, cancel eligible runs, then delete completed history. Confirm pending notifications, uncertain/running publications and open incidents are protected.
 - Delete stored matches and completed publication history. Confirm Telegram messages and queued notifications remain; the next scheduled replacement still deletes its previous tracked messages.
 - Delete accepted Telegram delivery history, then recover monitored report-chat messages. Confirm those reports still cannot match rules or create notification loops.
+
+After the entity-list extraction, spot-check Sources, Rules, Posts, Schedules, Matches and both Activity views: normal card actions work; Select preserves layout and makes every tile click toggle selection; completing a bulk action exits selection. Check empty lists, retry after a connection error and pagination after deleting the final page. Filters and view controls are not part of this change.

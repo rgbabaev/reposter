@@ -1101,8 +1101,7 @@ select:disabled {
 .bulk-selection {
   margin-block: 1rem;
 }
-.bulk-item,
-.bulk-selectable {
+.bulk-item {
   position: relative;
   min-width: 0;
 }
@@ -1125,9 +1124,7 @@ select:disabled {
   outline-offset: 2px;
 }
 .bulk-item > .card > :first-child,
-.bulk-selectable > .card-heading,
-.bulk-selectable > h2,
-.bulk-selectable > p:first-of-type {
+.bulk-item > .card > h2 {
   padding-right: 44px;
 }
 .bulk-action-panel {

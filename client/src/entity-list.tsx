@@ -1,7 +1,7 @@
 import type { Page } from "@monitor/shared";
 import type { ComponentChildren } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
-import { ErrorNotice } from "./components";
+import { Empty, ErrorNotice, Loading, Pager } from "./components";
 
 export function usePageClamp(
   data: Page<unknown> | undefined,
@@ -23,7 +23,7 @@ export interface BulkAction<T> {
   confirm?: string;
 }
 
-export function useBulkSelection<T extends Item>(
+function useBulkSelection<T extends Item>(
   items: T[] | undefined,
   scope: string | number,
   refresh: () => void,
@@ -171,7 +171,6 @@ export function useBulkSelection<T extends Item>(
         <ErrorNotice message={error} />
       </div>
     ),
-    checkbox,
     row: (item: T, children: ComponentChildren, label?: string) => (
       <div key={item.id} class="bulk-item">
         {checkbox(item, label)}
@@ -179,4 +178,58 @@ export function useBulkSelection<T extends Item>(
       </div>
     ),
   };
+}
+
+export interface EntityListProps<T extends Item> {
+  data: Page<T> | undefined;
+  loading: boolean;
+  error?: string;
+  refresh: () => void;
+  onPage: (page: number) => void;
+  scope: string | number;
+  actions: BulkAction<T>[];
+  itemLabel: (item: T) => string;
+  renderItem: (item: T) => ComponentChildren;
+  emptyTitle: string;
+  emptyDescription?: ComponentChildren;
+}
+
+export function EntityList<T extends Item>({
+  data,
+  loading,
+  error,
+  refresh,
+  onPage,
+  scope,
+  actions,
+  itemLabel,
+  renderItem,
+  emptyTitle,
+  emptyDescription,
+}: EntityListProps<T>) {
+  const bulk = useBulkSelection(data?.items, scope, refresh, actions);
+  usePageClamp(data, onPage);
+  return (
+    <>
+      {bulk.toolbar}
+      <ErrorNotice message={error} onRetry={refresh} />
+      {loading ? (
+        <Loading />
+      ) : (
+        data &&
+        (data.items.length ? (
+          <>
+            <div class="stack">
+              {data.items.map((item) =>
+                bulk.row(item, renderItem(item), itemLabel(item)),
+              )}
+            </div>
+            <Pager data={data} onPage={onPage} />
+          </>
+        ) : (
+          <Empty title={emptyTitle}>{emptyDescription}</Empty>
+        ))
+      )}
+    </>
+  );
 }

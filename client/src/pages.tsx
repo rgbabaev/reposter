@@ -1,4 +1,4 @@
-import { useBulkSelection, usePageClamp } from "./bulk-selection";
+import { EntityList, usePageClamp, type BulkAction } from "./entity-list";
 import { MatchImageGallery } from "./match-images";
 import { ruleHeading } from "@monitor/shared";
 import { useEffect, useState } from "preact/hooks";
@@ -134,7 +134,7 @@ export function SourcesPage() {
   );
   const all = useRemote<Page<Source>>("/sources?pageSize=100");
   const action = useAction();
-  const bulk = useBulkSelection(selected.data?.items, page, refreshSelected, [
+  const bulkActions: BulkAction<Source>[] = [
     {
       label: "Delete",
       confirm:
@@ -147,8 +147,7 @@ export function SourcesPage() {
       run: (source: Source) =>
         api(`/sources/${source.id}`, { method: "PATCH", body: { enabled } }),
     })),
-  ]);
-  usePageClamp(selected.data, setPage);
+  ];
   usePageClamp(discovered.data, setDiscoveryPage);
   function refreshSelected() {
     selected.refresh();
@@ -252,99 +251,91 @@ export function SourcesPage() {
       )}
       <section aria-labelledby="selected-title">
         <h2 id="selected-title">Monitored sources</h2>
-        {bulk.toolbar}
-        <ErrorNotice message={selected.error} onRetry={selected.refresh} />
-        {selected.loading ? (
-          <Loading />
-        ) : selected.data?.items.length ? (
-          <>
-            <div class="stack">
-              {selected.data.items.map((source) => (
-                <article class="card bulk-selectable" key={source.id}>
-                  {bulk.checkbox(source, source.name)}
-                  <div class="card-heading">
-                    <div>
-                      <h3>{source.name}</h3>
-                      <p class="muted">
-                        {source.kind === "topic"
-                          ? "Forum topic"
-                          : source.kind.charAt(0).toUpperCase() +
-                            source.kind.slice(1)}
-                      </p>
-                    </div>
-                    <span
-                      class={"badge " + (source.enabled ? "good" : "neutral")}
-                    >
-                      {source.enabled ? "Enabled" : "Disabled"}
-                    </span>
-                  </div>
-                  {source.error && (
-                    <p class="error-text">
-                      Source access needs attention. Check Connectors and
-                      Activity Log.
-                    </p>
-                  )}
+        <EntityList
+          data={selected.data}
+          loading={selected.loading}
+          error={selected.error}
+          refresh={refreshSelected}
+          onPage={setPage}
+          scope={page}
+          actions={bulkActions}
+          itemLabel={(source) => source.name}
+          renderItem={(source) => (
+            <article class="card">
+              <div class="card-heading">
+                <div>
+                  <h3>{source.name}</h3>
                   <p class="muted">
-                    {source.enabled ? "Enabled since" : "Selection changed"}{" "}
-                    {utc(source.selectedAt)}
+                    {source.kind === "topic"
+                      ? "Forum topic"
+                      : source.kind.charAt(0).toUpperCase() +
+                        source.kind.slice(1)}
                   </p>
-                  <div class="actions">
-                    <button
-                      type="button"
-                      disabled={action.busy}
-                      onClick={() =>
-                        action.run(async () => {
-                          await api("/sources/" + source.id, {
-                            method: "PATCH",
-                            body: { enabled: !source.enabled },
-                          });
-                          refreshSelected();
-                        })
-                      }
-                    >
-                      {source.enabled ? "Disable" : "Enable"}
-                    </button>
-                    <Link
-                      class="button"
-                      href={
-                        "/rules/new?source=" + encodeURIComponent(source.id)
-                      }
-                    >
-                      Add rule
-                    </Link>
-                    <button
-                      type="button"
-                      class="danger subtle"
-                      disabled={action.busy}
-                      onClick={() => {
-                        if (
-                          confirm(
-                            `Remove “${source.name}” and its rule assignments? Stored matches and queued notifications will be kept.`,
-                          )
-                        )
-                          void action.run(async () => {
-                            await api("/sources/" + source.id, {
-                              method: "DELETE",
-                            });
-                            refreshSelected();
-                          });
-                      }}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-            <Pager data={selected.data} onPage={setPage} />
-          </>
-        ) : (
-          selected.data && (
-            <Empty title="No monitored sources">
-              Choose Add sources to select your first chat or forum topic.
-            </Empty>
-          )
-        )}
+                </div>
+                <span class={"badge " + (source.enabled ? "good" : "neutral")}>
+                  {source.enabled ? "Enabled" : "Disabled"}
+                </span>
+              </div>
+              {source.error && (
+                <p class="error-text">
+                  Source access needs attention. Check Connectors and Activity
+                  Log.
+                </p>
+              )}
+              <p class="muted">
+                {source.enabled ? "Enabled since" : "Selection changed"}{" "}
+                {utc(source.selectedAt)}
+              </p>
+              <div class="actions">
+                <button
+                  type="button"
+                  disabled={action.busy}
+                  onClick={() =>
+                    action.run(async () => {
+                      await api("/sources/" + source.id, {
+                        method: "PATCH",
+                        body: { enabled: !source.enabled },
+                      });
+                      refreshSelected();
+                    })
+                  }
+                >
+                  {source.enabled ? "Disable" : "Enable"}
+                </button>
+                <Link
+                  class="button"
+                  href={"/rules/new?source=" + encodeURIComponent(source.id)}
+                >
+                  Add rule
+                </Link>
+                <button
+                  type="button"
+                  class="danger subtle"
+                  disabled={action.busy}
+                  onClick={() => {
+                    if (
+                      confirm(
+                        `Remove “${source.name}” and its rule assignments? Stored matches and queued notifications will be kept.`,
+                      )
+                    )
+                      void action.run(async () => {
+                        await api("/sources/" + source.id, {
+                          method: "DELETE",
+                        });
+                        refreshSelected();
+                      });
+                  }}
+                >
+                  Remove
+                </button>
+              </div>
+            </article>
+          )}
+          emptyTitle="No monitored sources"
+          emptyDescription={
+            "Choose Add sources to select your first chat or forum topic."
+          }
+        />
         <p class="footnote">
           Enabling starts from the current message. Earlier messages and
           disabled periods are excluded. Removing a source keeps its stored
@@ -366,7 +357,7 @@ export function RulesPage() {
   const remote = useRemote<Page<Rule>>(`/rules?page=${page}`);
   const sources = useRemote<Page<Source>>("/sources?pageSize=100");
   const action = useAction();
-  const bulk = useBulkSelection(remote.data?.items, page, remote.refresh, [
+  const bulkActions: BulkAction<Rule>[] = [
     {
       label: "Delete",
       confirm: "Existing matches are kept.",
@@ -379,8 +370,7 @@ export function RulesPage() {
       run: (rule: Rule) =>
         api(`/rules/${rule.id}`, { method: "PUT", body: { ...rule, enabled } }),
     })),
-  ]);
-  usePageClamp(remote.data, setPage);
+  ];
   return (
     <>
       <PageHeading
@@ -392,108 +382,98 @@ export function RulesPage() {
           </Link>
         }
       />
-      {bulk.toolbar}
       <ErrorNotice
-        message={action.error || remote.error || sources.error}
-        onRetry={
-          remote.error || sources.error
-            ? () => {
-                remote.refresh();
-                sources.refresh();
-              }
-            : undefined
+        message={action.error || sources.error}
+        onRetry={sources.error ? sources.refresh : undefined}
+      />
+      <EntityList
+        data={remote.data}
+        loading={remote.loading}
+        error={remote.error}
+        refresh={remote.refresh}
+        onPage={setPage}
+        scope={page}
+        actions={bulkActions}
+        itemLabel={ruleHeading}
+        renderItem={(rule) => (
+          <article class="card">
+            <div class="card-heading">
+              <div>
+                <h2>{ruleHeading(rule)}</h2>
+                <p class="muted">
+                  {rule.sourceIds.length
+                    ? rule.sourceIds
+                        .map(
+                          (id) =>
+                            sources.data?.items.find((s) => s.id === id)
+                              ?.name || "Loading source…",
+                        )
+                        .join(", ")
+                    : "Unassigned"}
+                </p>
+              </div>
+              <span class={"badge " + (rule.enabled ? "good" : "neutral")}>
+                {rule.enabled ? "Enabled" : "Disabled"}
+              </span>
+            </div>
+            <ul class="conditions">
+              {rule.conditions.map((condition, index) => (
+                <li key={index}>
+                  <span>{conditionLabels[condition.kind]}</span>{" "}
+                  <strong>{condition.value}</strong>
+                </li>
+              ))}
+            </ul>
+            <p class="muted">
+              {rule.attachmentTypes.length
+                ? "Also requires one of: " + rule.attachmentTypes.join(", ")
+                : "Text alone can match. Images are optional."}
+            </p>
+            <div class="actions">
+              <Link href={"/rules/" + rule.id + "/edit"} class="button">
+                Edit
+              </Link>
+              <button
+                type="button"
+                disabled={action.busy}
+                onClick={() =>
+                  action.run(async () => {
+                    await api("/rules/" + rule.id, {
+                      method: "PUT",
+                      body: { ...rule, enabled: !rule.enabled },
+                    });
+                    remote.refresh();
+                  })
+                }
+              >
+                {rule.enabled ? "Disable" : "Enable"}
+              </button>
+              <button
+                type="button"
+                class="danger subtle"
+                disabled={action.busy}
+                onClick={() => {
+                  if (
+                    confirm(
+                      `Delete “${ruleHeading(rule)}”? Existing matches will be kept.`,
+                    )
+                  )
+                    void action.run(async () => {
+                      await api("/rules/" + rule.id, { method: "DELETE" });
+                      remote.refresh();
+                    });
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </article>
+        )}
+        emptyTitle="No rules yet"
+        emptyDescription={
+          "Add a source, then create a rule with at least one text condition."
         }
       />
-      {remote.loading ? (
-        <Loading />
-      ) : remote.data?.items.length ? (
-        <>
-          <div class="stack">
-            {remote.data.items.map((rule) => (
-              <article class="card bulk-selectable" key={rule.id}>
-                {bulk.checkbox(rule, ruleHeading(rule))}
-                <div class="card-heading">
-                  <div>
-                    <h2>{ruleHeading(rule)}</h2>
-                    <p class="muted">
-                      {rule.sourceIds.length
-                        ? rule.sourceIds
-                            .map(
-                              (id) =>
-                                sources.data?.items.find((s) => s.id === id)
-                                  ?.name || "Loading source…",
-                            )
-                            .join(", ")
-                        : "Unassigned"}
-                    </p>
-                  </div>
-                  <span class={"badge " + (rule.enabled ? "good" : "neutral")}>
-                    {rule.enabled ? "Enabled" : "Disabled"}
-                  </span>
-                </div>
-                <ul class="conditions">
-                  {rule.conditions.map((condition, index) => (
-                    <li key={index}>
-                      <span>{conditionLabels[condition.kind]}</span>{" "}
-                      <strong>{condition.value}</strong>
-                    </li>
-                  ))}
-                </ul>
-                <p class="muted">
-                  {rule.attachmentTypes.length
-                    ? "Also requires one of: " + rule.attachmentTypes.join(", ")
-                    : "Text alone can match. Images are optional."}
-                </p>
-                <div class="actions">
-                  <Link href={"/rules/" + rule.id + "/edit"} class="button">
-                    Edit
-                  </Link>
-                  <button
-                    type="button"
-                    disabled={action.busy}
-                    onClick={() =>
-                      action.run(async () => {
-                        await api("/rules/" + rule.id, {
-                          method: "PUT",
-                          body: { ...rule, enabled: !rule.enabled },
-                        });
-                        remote.refresh();
-                      })
-                    }
-                  >
-                    {rule.enabled ? "Disable" : "Enable"}
-                  </button>
-                  <button
-                    type="button"
-                    class="danger subtle"
-                    disabled={action.busy}
-                    onClick={() => {
-                      if (
-                        confirm(
-                          `Delete “${ruleHeading(rule)}”? Existing matches will be kept.`,
-                        )
-                      )
-                        void action.run(async () => {
-                          await api("/rules/" + rule.id, { method: "DELETE" });
-                          remote.refresh();
-                        });
-                    }}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-          <Pager data={remote.data} onPage={setPage} />
-        </>
-      ) : (
-        remote.data && (
-          <Empty title="No rules yet">
-            Add a source, then create a rule with at least one text condition.
-          </Empty>
-        )
-      )}
     </>
   );
 }
@@ -773,40 +753,34 @@ function MatchCard({ match }: { match: Match }) {
 export function MatchesPage() {
   const [page, setPage] = useState(1);
   const remote = useRemote<Page<Match>>(`/matches?page=${page}`, true);
-  const bulk = useBulkSelection(remote.data?.items, page, remote.refresh, [
+  const bulkActions: BulkAction<Match>[] = [
     {
       label: "Delete",
       confirm: "Telegram messages and queued notifications are kept.",
       run: (match) => api(`/matches/${match.id}`, { method: "DELETE" }),
     },
-  ]);
-  usePageClamp(remote.data, setPage);
+  ];
   return (
     <>
       <PageHeading
         title="Matched Messages"
         description="Saved notifications, newest first. All times are UTC."
       />
-      {bulk.toolbar}
-      <ErrorNotice message={remote.error} onRetry={remote.refresh} />
-      {remote.loading ? (
-        <Loading />
-      ) : remote.data?.items.length ? (
-        <>
-          <div class="stack">
-            {remote.data.items.map((match) =>
-              bulk.row(match, <MatchCard match={match} />, match.sourceName),
-            )}
-          </div>
-          <Pager data={remote.data} onPage={setPage} />
-        </>
-      ) : (
-        remote.data && (
-          <Empty title="No matched messages">
-            Enabled sources and rules will add matching messages here.
-          </Empty>
-        )
-      )}
+      <EntityList
+        data={remote.data}
+        loading={remote.loading}
+        error={remote.error}
+        refresh={remote.refresh}
+        onPage={setPage}
+        scope={page}
+        actions={bulkActions}
+        itemLabel={(match) => match.sourceName}
+        renderItem={(match) => <MatchCard match={match} />}
+        emptyTitle="No matched messages"
+        emptyDescription={
+          "Enabled sources and rules will add matching messages here."
+        }
+      />
     </>
   );
 }
@@ -1044,41 +1018,28 @@ export function ActivityPage() {
     true,
   );
   const action = useAction();
-  const remote = view === "events" ? events : jobs;
-  const eventBulk = useBulkSelection(
-    events.data?.items,
-    `${view}:${page}`,
-    events.refresh,
-    [
-      {
-        label: "Delete",
-        eligible: (event) => event.level === "info" || !!event.resolvedAt,
-        confirm:
-          "Only informational and resolved events can be deleted. Pending alerts are retained.",
-        run: (event) => api(`/activity/${event.id}`, { method: "DELETE" }),
-      },
-    ],
-  );
-  const jobBulk = useBulkSelection(
-    jobs.data?.items,
-    `${view}:${page}`,
-    jobs.refresh,
-    [
-      {
-        label: "Delete",
-        eligible: (job) => job.status === "sent",
-        confirm: "Only accepted notification records are deleted.",
-        run: (job) => api(`/jobs/${job.id}`, { method: "DELETE" }),
-      },
-      {
-        label: "Retry",
-        eligible: (job) => job.status === "failed",
-        run: (job) =>
-          api(`/jobs/${job.id}/retry`, { method: "POST", body: {} }),
-      },
-    ],
-  );
-  usePageClamp(remote.data, setPage);
+  const eventBulkActions: BulkAction<Activity>[] = [
+    {
+      label: "Delete",
+      eligible: (event) => event.level === "info" || !!event.resolvedAt,
+      confirm:
+        "Only informational and resolved events can be deleted. Pending alerts are retained.",
+      run: (event) => api(`/activity/${event.id}`, { method: "DELETE" }),
+    },
+  ];
+  const jobBulkActions: BulkAction<NotificationJob>[] = [
+    {
+      label: "Delete",
+      eligible: (job) => job.status === "sent",
+      confirm: "Only accepted notification records are deleted.",
+      run: (job) => api(`/jobs/${job.id}`, { method: "DELETE" }),
+    },
+    {
+      label: "Retry",
+      eligible: (job) => job.status === "failed",
+      run: (job) => api(`/jobs/${job.id}/retry`, { method: "POST", body: {} }),
+    },
+  ];
   return (
     <>
       <Link class="back-link" href="/more">
@@ -1112,70 +1073,68 @@ export function ActivityPage() {
           Notification delivery
         </button>
       </div>
-      {view === "events" ? eventBulk.toolbar : jobBulk.toolbar}
-      <ErrorNotice
-        message={action.error || remote.error}
-        onRetry={remote.error ? remote.refresh : undefined}
-      />
-      {remote.loading ? (
-        <Loading />
-      ) : view === "events" ? (
-        events.data?.items.length ? (
-          <>
-            <div class="stack">
-              {events.data.items.map((event) => (
-                <article class="card bulk-selectable" key={event.id}>
-                  {eventBulk.checkbox(event, event.code)}
-                  <div class="card-heading">
-                    <h2>{event.code.replaceAll("_", " ")}</h2>
-                    <span
-                      class={
-                        "badge " +
-                        (event.level === "error" && !event.resolvedAt
-                          ? "bad"
-                          : "neutral")
-                      }
-                    >
-                      {event.level === "info"
-                        ? "Info"
-                        : event.resolvedAt
-                          ? "Resolved"
-                          : "Open incident"}
-                    </span>
-                  </div>
-                  <p>{event.message}</p>
-                  <p class="muted">
-                    {event.occurrences}{" "}
-                    {event.occurrences === 1 ? "occurrence" : "occurrences"} ·
-                    Last seen {utc(event.lastSeenAt)}
-                  </p>
-                  <p class="muted">
-                    Opened {utc(event.openedAt)}
-                    {event.resolvedAt
-                      ? " · Resolved " + utc(event.resolvedAt)
-                      : ""}
-                  </p>
-                </article>
-              ))}
-            </div>
-            <Pager data={events.data} onPage={setPage} />
-          </>
-        ) : (
-          events.data && (
-            <Empty title="No activity yet">
-              Connection and delivery incidents will appear here.
-            </Empty>
-          )
-        )
-      ) : jobs.data?.items.length ? (
+      <ErrorNotice message={action.error} />
+      {view === "events" ? (
+        <EntityList
+          key="events"
+          data={events.data}
+          loading={events.loading}
+          error={events.error}
+          refresh={events.refresh}
+          onPage={setPage}
+          scope={`${view}:${page}`}
+          actions={eventBulkActions}
+          itemLabel={(event) => event.code}
+          renderItem={(event) => (
+            <article class="card">
+              <div class="card-heading">
+                <h2>{event.code.replaceAll("_", " ")}</h2>
+                <span
+                  class={
+                    "badge " +
+                    (event.level === "error" && !event.resolvedAt
+                      ? "bad"
+                      : "neutral")
+                  }
+                >
+                  {event.level === "info"
+                    ? "Info"
+                    : event.resolvedAt
+                      ? "Resolved"
+                      : "Open incident"}
+                </span>
+              </div>
+              <p>{event.message}</p>
+              <p class="muted">
+                {event.occurrences}{" "}
+                {event.occurrences === 1 ? "occurrence" : "occurrences"} · Last
+                seen {utc(event.lastSeenAt)}
+              </p>
+              <p class="muted">
+                Opened {utc(event.openedAt)}
+                {event.resolvedAt ? " · Resolved " + utc(event.resolvedAt) : ""}
+              </p>
+            </article>
+          )}
+          emptyTitle="No activity yet"
+          emptyDescription={
+            "Connection and delivery incidents will appear here."
+          }
+        />
+      ) : (
         <>
-          <div class="stack">
-            {jobs.data.items.map((job) => (
-              <article class="card bulk-selectable" key={job.id}>
-                {jobBulk.checkbox(
-                  job,
-                  `${job.channel} ${job.kind} notification`,
-                )}
+          <EntityList
+            key="delivery"
+            data={jobs.data}
+            loading={jobs.loading}
+            error={jobs.error}
+            refresh={jobs.refresh}
+            onPage={setPage}
+            scope={`${view}:${page}`}
+            actions={jobBulkActions}
+            itemLabel={(job) => `${job.channel} ${job.kind} notification`}
+            renderItem={(job) => (
+              <article class="card">
                 <p class="muted">
                   {job.channel === "telegram" ? "Telegram report" : "Email"}
                 </p>
@@ -1198,20 +1157,19 @@ export function ActivityPage() {
                   }
                 />
               </article>
-            ))}
-          </div>
-          <Pager data={jobs.data} onPage={setPage} />
-          <p class="footnote">
-            Accepted means SMTP or Telegram accepted the notification. Delivery
-            and reading are outside the application’s control.
-          </p>
+            )}
+            emptyTitle="No notification jobs"
+            emptyDescription={
+              "Matches and incidents create durable delivery jobs."
+            }
+          />
+          {jobs.data?.items.length ? (
+            <p class="footnote">
+              Accepted means SMTP or Telegram accepted the notification.
+              Delivery and reading are outside the application’s control.
+            </p>
+          ) : null}
         </>
-      ) : (
-        jobs.data && (
-          <Empty title="No notification jobs">
-            Matches and incidents create durable delivery jobs.
-          </Empty>
-        )
       )}
     </>
   );
