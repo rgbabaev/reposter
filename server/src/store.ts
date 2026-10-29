@@ -74,7 +74,7 @@ export class Store {
     return (
       !!id &&
       !!this.db.get(
-        "SELECT id FROM notification_jobs WHERE id=? AND channel='telegram'",
+        "SELECT id FROM notification_jobs WHERE id=?1 AND channel='telegram' UNION ALL SELECT id FROM notification_report_ids WHERE id=?1",
         id,
       )
     );
@@ -367,6 +367,48 @@ export class Store {
         "UPDATE notification_jobs SET payload='{}' WHERE match_id=? AND status='sent'",
         id,
       );
+    });
+  }
+  deleteJob(id: string) {
+    this.db.transaction(() => {
+      const job = this.db.get(
+        "SELECT status,channel FROM notification_jobs WHERE id=?",
+        id,
+      );
+      if (!job) throw new HttpError(404, "Notification job not found.");
+      if (job.status !== "sent")
+        throw new HttpError(
+          409,
+          "Only accepted notification records can be deleted.",
+        );
+      if (job.channel === "telegram")
+        this.db.run(
+          "INSERT OR IGNORE INTO notification_report_ids(id) VALUES(?)",
+          id,
+        );
+      this.db.run("DELETE FROM notification_jobs WHERE id=?", id);
+    });
+  }
+  deleteActivity(id: string) {
+    this.db.transaction(() => {
+      const event = this.db.get(
+        "SELECT level,resolved_at FROM activity WHERE id=?",
+        id,
+      );
+      if (!event) throw new HttpError(404, "Activity event not found.");
+      if (event.level === "error" && !event.resolved_at)
+        throw new HttpError(409, "Open incidents cannot be deleted.");
+      if (
+        this.db.get(
+          "SELECT id FROM notification_jobs WHERE incident_id=? AND status<>'sent'",
+          id,
+        )
+      )
+        throw new HttpError(
+          409,
+          "Events with pending alerts cannot be deleted.",
+        );
+      this.db.run("DELETE FROM activity WHERE id=?", id);
     });
   }
   mapJob(r: Record<string, any>): NotificationJob {

@@ -100,6 +100,12 @@ export class PublicationApi {
       json(res, 202, run);
       return true;
     }
+    const history = path.match(/^\/api\/publications\/([^/]+)$/);
+    if (history && req.method === "DELETE") {
+      this.publications.remove(history[1]!);
+      json(res, 200, { deleted: true });
+      return true;
+    }
     const run = path.match(
       /^\/api\/publications\/([^/]+)\/(retry|reconcile|cancel)$/,
     );

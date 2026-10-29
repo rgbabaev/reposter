@@ -1,3 +1,4 @@
+import { useBulkSelection, usePageClamp } from "./bulk-selection";
 import { PostTextEditor } from "./post-text-editor";
 import type { TextEntity } from "@monitor/shared";
 import { postHeading } from "@monitor/shared";
@@ -26,6 +27,15 @@ type DraftImage =
 export function PostsPage() {
   const [page, setPage] = useState(1);
   const remote = useRemote<Page<Post>>(`/posts?page=${page}`, true);
+  usePageClamp(remote.data, setPage);
+  const bulk = useBulkSelection(remote.data?.items, page, remote.refresh, [
+    {
+      label: "Delete",
+      confirm:
+        "Published Telegram messages remain. Posts referenced by schedules or publication history cannot be deleted.",
+      run: (post) => api(`/posts/${post.id}`, { method: "DELETE" }),
+    },
+  ]);
   return (
     <>
       <PageHeading
@@ -37,6 +47,7 @@ export function PostsPage() {
           </Link>
         }
       />
+      {bulk.toolbar}
       <ErrorNotice message={remote.error} onRetry={remote.refresh} />
       {remote.loading && <Loading />}
       {remote.data && (
@@ -48,9 +59,13 @@ export function PostsPage() {
             </Empty>
           )}
           <div class="stack">
-            {remote.data.items.map((post) => (
-              <PostCard key={post.id} post={post} refresh={remote.refresh} />
-            ))}
+            {remote.data.items.map((post) =>
+              bulk.row(
+                post,
+                <PostCard post={post} refresh={remote.refresh} />,
+                postHeading(post),
+              ),
+            )}
           </div>
           <Pager data={remote.data} onPage={setPage} />
         </>
@@ -323,21 +338,47 @@ export function PublicationsPage() {
     `/publications?page=${page}`,
     true,
   );
+  usePageClamp(remote.data, setPage);
+  const bulk = useBulkSelection(remote.data?.items, page, remote.refresh, [
+    {
+      label: "Delete",
+      eligible: (run) => ["sent", "partial", "cancelled"].includes(run.status),
+      confirm:
+        "Only completed history is deleted. Telegram messages and schedule replacement tracking remain.",
+      run: (run) => api(`/publications/${run.id}`, { method: "DELETE" }),
+    },
+    {
+      label: "Retry",
+      eligible: (run) => run.status === "failed",
+      run: (run) => api(`/publications/${run.id}/retry`, { method: "POST" }),
+    },
+    {
+      label: "Cancel runs",
+      eligible: (run) => ["queued", "failed"].includes(run.status),
+      confirm: "Messages already deleted remain deleted.",
+      run: (run) => api(`/publications/${run.id}/cancel`, { method: "POST" }),
+    },
+  ]);
   return (
     <>
       <PageHeading
         title="Publication history"
         description="Sent messages, replacement progress and results needing review."
       />
+      {bulk.toolbar}
       <ErrorNotice message={remote.error} onRetry={remote.refresh} />
       {remote.loading && <Loading />}
       {remote.data && (
         <>
           {!remote.data.items.length && <Empty title="No publications yet" />}
           <div class="stack">
-            {remote.data.items.map((run) => (
-              <RunCard key={run.id} run={run} refresh={remote.refresh} />
-            ))}
+            {remote.data.items.map((run) =>
+              bulk.row(
+                run,
+                <RunCard run={run} refresh={remote.refresh} />,
+                run.postName,
+              ),
+            )}
           </div>
           <Pager data={remote.data} onPage={setPage} />
         </>

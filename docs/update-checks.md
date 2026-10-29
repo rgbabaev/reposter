@@ -65,3 +65,13 @@ Restart after building to apply migration 010.
 - [ ] Complete source/rule setup, post/schedule editing and login/logout on a physical phone and desktop Safari. Physical-phone acceptance remains pending until performed.
 
 Record outcomes in `manual-checks.md`. SMTP acceptance does not establish inbox delivery.
+
+## Bulk list actions
+
+- On Sources, Rules, Matches, Posts, Schedules, Publications, Activity and Notification delivery, confirm checkboxes appear only after Select. Confirm checkboxes sit inside cards and toggling Select/Cancel does not move cards or headings. In Select mode, tap headings, links, buttons and image previews: each tap must only select/deselect the tile. After Cancel, their normal actions must work. Check individual selection, Select page, Clear and Cancel with touch and keyboard; swipe the floating action toolbar on narrow screens and confirm pagination remains reachable.
+- Disable/enable several sources and rules; pause/resume schedules. Confirm re-enabled sources exclude disabled-period messages.
+- Delete a mix of unused and referenced posts. Confirm successful deletes remain applied, the failure is explained and Select mode closes with all checkboxes hidden.
+- Select records, change page or activity tab, and confirm selection clears. Delete the last records on the final page and confirm the list returns to a valid page.
+- Retry failed deliveries/publications, cancel eligible runs, then delete completed history. Confirm pending notifications, uncertain/running publications and open incidents are protected.
+- Delete stored matches and completed publication history. Confirm Telegram messages and queued notifications remain; the next scheduled replacement still deletes its previous tracked messages.
+- Delete accepted Telegram delivery history, then recover monitored report-chat messages. Confirm those reports still cannot match rules or create notification loops.

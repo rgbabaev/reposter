@@ -127,6 +127,18 @@ export class Publications {
     );
     return this.get(id);
   }
+  remove(id: string) {
+    this.store.db.transaction(() => {
+      const run = this.get(id);
+      if (!["sent", "partial", "cancelled"].includes(run.status))
+        throw new HttpError(
+          409,
+          "Only completed publication history can be deleted. Cancel or review unfinished runs first.",
+        );
+      this.store.db.run("DELETE FROM publication_runs WHERE id=?", id);
+      this.posts.pruneImages(run.postId);
+    });
+  }
   retry(id: string) {
     const run = this.get(id);
     if (run.status !== "failed")

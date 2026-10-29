@@ -188,6 +188,14 @@ export class Api {
           json(res, 200, this.store.jobs(page, pageSize));
           return;
         }
+        const historyRoute = path.match(/^\/api\/(activity|jobs)\/([^/]+)$/);
+        if (historyRoute && req.method === "DELETE") {
+          if (historyRoute[1] === "activity")
+            this.store.deleteActivity(historyRoute[2]!);
+          else this.store.deleteJob(historyRoute[2]!);
+          json(res, 200, { deleted: true });
+          return;
+        }
         const retryRoute = path.match(/^\/api\/jobs\/([^/]+)\/retry$/);
         if (retryRoute && req.method === "POST") {
           if (!this.store.retryJob(retryRoute[1]!))

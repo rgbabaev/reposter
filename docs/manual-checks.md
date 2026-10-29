@@ -137,3 +137,15 @@ Disposable SQLite and simulated connectors passed album references/order, scoped
 Chromium and WebKit at 390/320px passed authenticated lazy list/detail previews, click/touch zoom, scrolling/fit, album controls and arrow keys, Escape/focus restoration, cached reuse and unavailable-image retry, without page errors or horizontal overflow. Production build, type and whitespace checks passed. Live Telegram and physical-phone checks remain in [update-checks.md](update-checks.md).
 
 Zoom correction (2026-10-29): the installed GramJS downloader does not accept a `PhotoSizeProgressive` object as its thumbnail argument, returning empty data for many full-size photos. Normalize that descriptor to a supported `PhotoSize` while preserving type, dimensions and byte limit. A regression fixture failed before the fix and passed afterward through the real GramJS download pipeline with stubbed file RPC. Chromium/WebKit zoom checks now also use progressive-photo fixtures through that pipeline. Build, type and whitespace checks passed. Restart the server and retry the image; failed downloads were not cached.
+
+## Bulk list actions (2026-10-29)
+
+Production build, TypeScript checks and whitespace validation passed. Disposable SQLite/API fixtures verified deletion guards for pending jobs, open incidents, events with pending alerts and unfinished publication runs; deleting completed history retained schedule replacement IDs. Deleted Telegram report identities remained recognized for loop prevention. Protected deletion routes rejected unauthenticated requests.
+
+Chromium and WebKit at 390/320 px passed opt-in selection, individual/page selection, clear/cancel, rule Enable/Disable, schedule Pause/Resume, mixed-success post deletion with retained failed selection, page-change reset, final-page clamping and retained queued notifications after match deletion. No browser errors or horizontal overflow occurred. No live Telegram messages were sent or deleted. Physical-phone and live entity-operation checks remain in [update-checks.md](update-checks.md#bulk-list-actions).
+
+Select-mode follow-up: bulk actions now clear selection and hide checkboxes on completion, including partial failures; result counts and errors stay visible. Build/type checks and Chromium/WebKit fixtures passed automatic exit after rule/schedule actions and mixed-success deletion.
+
+Selection layout follow-up: Chromium/WebKit at 390/320 px verified unchanged card bounds and heading positions when entering/leaving Select mode, checkboxes within card bounds, and reachable pagination alongside the floating action toolbar. Existing bulk action and automatic-exit fixtures passed. Production build passed.
+
+Whole-tile selection follow-up: Chromium/WebKit fixtures at 390/320 px passed selection toggles from card headings and underlying link/button positions without navigation or mutation requests. Touching match image previews toggled selection without opening the viewer; after Cancel, normal image zoom worked. Card geometry and existing bulk behavior remained unchanged. Production build and whitespace checks passed.

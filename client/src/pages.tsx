@@ -1,3 +1,4 @@
+import { useBulkSelection, usePageClamp } from "./bulk-selection";
 import { MatchImageGallery } from "./match-images";
 import { ruleHeading } from "@monitor/shared";
 import { useEffect, useState } from "preact/hooks";
@@ -29,18 +30,6 @@ import {
   Pager,
   Status,
 } from "./components";
-
-function usePageClamp(
-  data: Page<unknown> | undefined,
-  onPage: (page: number) => void,
-) {
-  useEffect(() => {
-    if (data) {
-      const last = Math.max(1, Math.ceil(data.total / data.pageSize));
-      if (data.page > last) onPage(last);
-    }
-  }, [data?.page, data?.total, data?.pageSize]);
-}
 
 export function Dashboard() {
   const remote = useRemote<DashboardData>("/dashboard", true);
@@ -145,12 +134,26 @@ export function SourcesPage() {
   );
   const all = useRemote<Page<Source>>("/sources?pageSize=100");
   const action = useAction();
+  const bulk = useBulkSelection(selected.data?.items, page, refreshSelected, [
+    {
+      label: "Delete",
+      confirm:
+        "Rule assignments are removed; stored matches and queued notifications are kept.",
+      run: (source) => api(`/sources/${source.id}`, { method: "DELETE" }),
+    },
+    ...[false, true].map((enabled) => ({
+      label: enabled ? "Enable" : "Disable",
+      eligible: (source: Source) => source.enabled !== enabled,
+      run: (source: Source) =>
+        api(`/sources/${source.id}`, { method: "PATCH", body: { enabled } }),
+    })),
+  ]);
   usePageClamp(selected.data, setPage);
   usePageClamp(discovered.data, setDiscoveryPage);
-  const refreshSelected = () => {
+  function refreshSelected() {
     selected.refresh();
     all.refresh();
-  };
+  }
   const select = (source: DiscoveredSource) =>
     action.run(async () => {
       await api("/sources", {
@@ -249,6 +252,7 @@ export function SourcesPage() {
       )}
       <section aria-labelledby="selected-title">
         <h2 id="selected-title">Monitored sources</h2>
+        {bulk.toolbar}
         <ErrorNotice message={selected.error} onRetry={selected.refresh} />
         {selected.loading ? (
           <Loading />
@@ -256,7 +260,8 @@ export function SourcesPage() {
           <>
             <div class="stack">
               {selected.data.items.map((source) => (
-                <article class="card" key={source.id}>
+                <article class="card bulk-selectable" key={source.id}>
+                  {bulk.checkbox(source, source.name)}
                   <div class="card-heading">
                     <div>
                       <h3>{source.name}</h3>
@@ -361,6 +366,20 @@ export function RulesPage() {
   const remote = useRemote<Page<Rule>>(`/rules?page=${page}`);
   const sources = useRemote<Page<Source>>("/sources?pageSize=100");
   const action = useAction();
+  const bulk = useBulkSelection(remote.data?.items, page, remote.refresh, [
+    {
+      label: "Delete",
+      confirm: "Existing matches are kept.",
+      run: (rule) => api(`/rules/${rule.id}`, { method: "DELETE" }),
+    },
+    ...[false, true].map((enabled) => ({
+      label: enabled ? "Enable" : "Disable",
+      eligible: (rule: Rule) =>
+        rule.enabled !== enabled && (!enabled || rule.sourceIds.length > 0),
+      run: (rule: Rule) =>
+        api(`/rules/${rule.id}`, { method: "PUT", body: { ...rule, enabled } }),
+    })),
+  ]);
   usePageClamp(remote.data, setPage);
   return (
     <>
@@ -373,6 +392,7 @@ export function RulesPage() {
           </Link>
         }
       />
+      {bulk.toolbar}
       <ErrorNotice
         message={action.error || remote.error || sources.error}
         onRetry={
@@ -390,7 +410,8 @@ export function RulesPage() {
         <>
           <div class="stack">
             {remote.data.items.map((rule) => (
-              <article class="card" key={rule.id}>
+              <article class="card bulk-selectable" key={rule.id}>
+                {bulk.checkbox(rule, ruleHeading(rule))}
                 <div class="card-heading">
                   <div>
                     <h2>{ruleHeading(rule)}</h2>
@@ -752,6 +773,13 @@ function MatchCard({ match }: { match: Match }) {
 export function MatchesPage() {
   const [page, setPage] = useState(1);
   const remote = useRemote<Page<Match>>(`/matches?page=${page}`, true);
+  const bulk = useBulkSelection(remote.data?.items, page, remote.refresh, [
+    {
+      label: "Delete",
+      confirm: "Telegram messages and queued notifications are kept.",
+      run: (match) => api(`/matches/${match.id}`, { method: "DELETE" }),
+    },
+  ]);
   usePageClamp(remote.data, setPage);
   return (
     <>
@@ -759,15 +787,16 @@ export function MatchesPage() {
         title="Matched Messages"
         description="Saved notifications, newest first. All times are UTC."
       />
+      {bulk.toolbar}
       <ErrorNotice message={remote.error} onRetry={remote.refresh} />
       {remote.loading ? (
         <Loading />
       ) : remote.data?.items.length ? (
         <>
           <div class="stack">
-            {remote.data.items.map((match) => (
-              <MatchCard key={match.id} match={match} />
-            ))}
+            {remote.data.items.map((match) =>
+              bulk.row(match, <MatchCard match={match} />, match.sourceName),
+            )}
           </div>
           <Pager data={remote.data} onPage={setPage} />
         </>
@@ -1016,6 +1045,39 @@ export function ActivityPage() {
   );
   const action = useAction();
   const remote = view === "events" ? events : jobs;
+  const eventBulk = useBulkSelection(
+    events.data?.items,
+    `${view}:${page}`,
+    events.refresh,
+    [
+      {
+        label: "Delete",
+        eligible: (event) => event.level === "info" || !!event.resolvedAt,
+        confirm:
+          "Only informational and resolved events can be deleted. Pending alerts are retained.",
+        run: (event) => api(`/activity/${event.id}`, { method: "DELETE" }),
+      },
+    ],
+  );
+  const jobBulk = useBulkSelection(
+    jobs.data?.items,
+    `${view}:${page}`,
+    jobs.refresh,
+    [
+      {
+        label: "Delete",
+        eligible: (job) => job.status === "sent",
+        confirm: "Only accepted notification records are deleted.",
+        run: (job) => api(`/jobs/${job.id}`, { method: "DELETE" }),
+      },
+      {
+        label: "Retry",
+        eligible: (job) => job.status === "failed",
+        run: (job) =>
+          api(`/jobs/${job.id}/retry`, { method: "POST", body: {} }),
+      },
+    ],
+  );
   usePageClamp(remote.data, setPage);
   return (
     <>
@@ -1050,6 +1112,7 @@ export function ActivityPage() {
           Notification delivery
         </button>
       </div>
+      {view === "events" ? eventBulk.toolbar : jobBulk.toolbar}
       <ErrorNotice
         message={action.error || remote.error}
         onRetry={remote.error ? remote.refresh : undefined}
@@ -1061,7 +1124,8 @@ export function ActivityPage() {
           <>
             <div class="stack">
               {events.data.items.map((event) => (
-                <article class="card" key={event.id}>
+                <article class="card bulk-selectable" key={event.id}>
+                  {eventBulk.checkbox(event, event.code)}
                   <div class="card-heading">
                     <h2>{event.code.replaceAll("_", " ")}</h2>
                     <span
@@ -1107,7 +1171,11 @@ export function ActivityPage() {
         <>
           <div class="stack">
             {jobs.data.items.map((job) => (
-              <article class="card" key={job.id}>
+              <article class="card bulk-selectable" key={job.id}>
+                {jobBulk.checkbox(
+                  job,
+                  `${job.channel} ${job.kind} notification`,
+                )}
                 <p class="muted">
                   {job.channel === "telegram" ? "Telegram report" : "Email"}
                 </p>

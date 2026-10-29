@@ -140,3 +140,9 @@ Defer multiple users/accounts, website adapters, nested rules, media analysis, r
 - [Node.js SQLite](https://nodejs.org/download/release/latest-v24.x/docs/api/sqlite.html)
 - [Preact](https://preactjs.com/)
 - [Nodemailer](https://nodemailer.com/)
+
+### Bulk list actions
+
+Sources, rules, matches, posts, schedules, publication history, activity and notification delivery provide an opt-in Select mode. Hide item checkboxes until Select is pressed. Place them inside each card in reserved space, and show bulk actions in a floating toolbar so entering or leaving Select mode does not move card content. In Select mode, clicking or tapping anywhere in a tile toggles selection; tile links, buttons and image previews must not act on those clicks. Support individual selection, Select page, Clear selection and Cancel selection. Changing page or activity view clears selection. Confirm bulk deletion once; report completed and failed counts, exit Select mode after completion (including partial failures), and continue independent operations after failures.
+
+Offer Delete plus Enable/Disable for sources and rules, Pause/Resume for schedules, Retry for failed notifications and publications, and Cancel for queued/failed publication runs. Posts and matches have Delete only. Existing relationship and unfinished-run restrictions apply. Delete only completed publication history, accepted notification records, and informational/resolved events without pending alerts. Preserve Telegram content, queued notifications, schedule replacement tracking, and recognition of deleted Telegram reports. Discovery and dashboard summaries remain outside bulk deletion.

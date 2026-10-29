@@ -1,3 +1,4 @@
+import { useBulkSelection, usePageClamp } from "./bulk-selection";
 import { postHeading, scheduleHeading } from "@monitor/shared";
 import { useEffect, useState } from "preact/hooks";
 import type {
@@ -39,6 +40,22 @@ function describe(calendar: CalendarSchedule) {
 export function SchedulesPage() {
   const [page, setPage] = useState(1);
   const remote = useRemote<Page<Schedule>>(`/schedules?page=${page}`, true);
+  usePageClamp(remote.data, setPage);
+  const bulk = useBulkSelection(remote.data?.items, page, remote.refresh, [
+    {
+      label: "Delete",
+      eligible: (schedule) => !schedule.blockedRunId,
+      confirm:
+        "Future runs stop. Posts, Telegram messages and publication history remain.",
+      run: (schedule) => api(`/schedules/${schedule.id}`, { method: "DELETE" }),
+    },
+    ...[true, false].map((paused) => ({
+      label: paused ? "Pause" : "Resume",
+      eligible: (schedule: Schedule) => schedule.paused !== paused,
+      run: (schedule: Schedule) =>
+        api(`/schedules/${schedule.id}`, { method: "PATCH", body: { paused } }),
+    })),
+  ]);
   return (
     <>
       <PageHeading
@@ -50,6 +67,7 @@ export function SchedulesPage() {
           </Link>
         }
       />
+      {bulk.toolbar}
       <ErrorNotice message={remote.error} onRetry={remote.refresh} />
       {remote.loading && <Loading />}
       {remote.data && (
@@ -60,13 +78,13 @@ export function SchedulesPage() {
             </Empty>
           )}
           <div class="stack">
-            {remote.data.items.map((schedule) => (
-              <ScheduleCard
-                key={schedule.id}
-                schedule={schedule}
-                refresh={remote.refresh}
-              />
-            ))}
+            {remote.data.items.map((schedule) =>
+              bulk.row(
+                schedule,
+                <ScheduleCard schedule={schedule} refresh={remote.refresh} />,
+                scheduleHeading(schedule),
+              ),
+            )}
           </div>
           <Pager data={remote.data} onPage={setPage} />
         </>

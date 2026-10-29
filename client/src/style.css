@@ -1097,3 +1097,62 @@ select:disabled {
   max-width: none;
   max-height: none;
 }
+
+.bulk-selection {
+  margin-block: 1rem;
+}
+.bulk-item,
+.bulk-selectable {
+  position: relative;
+  min-width: 0;
+}
+.bulk-item-check {
+  position: absolute;
+  inset: 0;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 20px;
+  margin: 0;
+  border-radius: 13px;
+  z-index: 2;
+}
+.bulk-item-check:has(input:checked) {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+.bulk-item-check:focus-within {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+}
+.bulk-item > .card > :first-child,
+.bulk-selectable > .card-heading,
+.bulk-selectable > h2,
+.bulk-selectable > p:first-of-type {
+  padding-right: 44px;
+}
+.bulk-action-panel {
+  position: fixed;
+  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(900px, calc(100% - 32px));
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: 0 4px 20px #0002;
+  z-index: 20;
+}
+.bulk-selection .actions {
+  align-items: center;
+}
+.workspace {
+  padding-bottom: 200px;
+}
+.bulk-action-panel > * {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
