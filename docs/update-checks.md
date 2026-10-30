@@ -87,3 +87,7 @@ Local checks on 2026-10-30 use disposable databases and a simulated connector; n
 - List checks cover loading/error/retry, tile selection, bulk actions, partial failure and pagination. Dialog checks cover confirmation accept/cancel, Escape, autofocus/focus restoration, filtering, image zoom/navigation and unavailable-image retry. Layouts pass at 320/390/900px.
 - Browser checks use only same-origin assets and APIs. CSP permits bundled icon `data:` fetches while retaining the existing script/style restrictions.
 - Rebuild and restart to serve the new assets and CSP header. No database upgrade is required. Spot-check physical-phone selection, dropdowns, uploads and dialogs; device acceptance remains pending.
+
+## Appearance refinement (task 30)
+
+The interface now follows Web Awesome’s documentation styling using the existing default theme. Local visual checks cover login, dashboard, sources, rules, posts, schedules, settings and More at 320/390/900/1280px without horizontal overflow. Existing Chromium/WebKit form, bulk-action and image/dialog regressions remain the behavior checks. Physical-phone acceptance remains pending.

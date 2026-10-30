@@ -233,3 +233,9 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 - [x] Migrate controls, cards, status feedback, confirmations and shared dialogs; retain native image upload and Telegram document editing.
 - [x] Verify validation/submission, selects, switches, editor selection, bulk actions, modal focus and mobile layouts in Chromium/WebKit.
 - Check: disposable API/database fixtures cover saved values, partial failures, confirmations, image zoom and 320/390/900px layouts. See [update-checks.md](update-checks.md).
+
+### 30. Refine Web Awesome appearance
+
+- [x] Match the documentation site’s white surfaces, typography, fine borders and restrained accents using shared theme tokens.
+- [x] Refine cards, metrics, navigation, form spacing and the editor toolbar while retaining accessible controls.
+- Check: production/type checks and Chromium/WebKit regressions cover forms, lists and dialogs; visual checks cover 320/390/900/1280px layouts.

@@ -45,6 +45,7 @@ export function Button({
   variant = "neutral",
   appearance = "outlined",
   type = "button",
+  size = "s",
   ...props
 }: ComponentAttributes<WaButton> & {
   elementRef?: RefObject<WaButton | null>;
@@ -76,6 +77,7 @@ export function Button({
       variant={variant}
       appearance={appearance}
       type={type}
+      size={size}
       ref={(element) => {
         button.current = element;
         if (elementRef) elementRef.current = element;

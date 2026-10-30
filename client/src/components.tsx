@@ -29,7 +29,17 @@ export function Link({
     }
   };
   return props.class?.split(" ").includes("button") ? (
-    <Button href={href} {...props} onClick={onClick}>
+    <Button
+      href={href}
+      variant={
+        props.class?.split(" ").includes("primary") ? "brand" : "neutral"
+      }
+      appearance={
+        props.class?.split(" ").includes("primary") ? "accent" : "outlined"
+      }
+      {...props}
+      onClick={onClick}
+    >
       {children}
     </Button>
   ) : (

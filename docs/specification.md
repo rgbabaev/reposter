@@ -94,7 +94,7 @@ Delete activity events after 30 days. Retain open incidents and pending delivery
 
 ## 7. Web UI and access
 
-Use English, a light theme, Web Awesome controls, clear spacing, and iOS-style navigation. Design for mobile screens first. Support Safari and Chromium. Use semantic HTML, visible focus, labelled fields, and touch targets of at least 44 CSS pixels. Do not add PWA support, dark mode, or decorative blur effects.
+Use English, a light theme, Web Awesome controls, clear spacing, and iOS-style navigation. Follow the Web Awesome documentation site’s white surfaces, light borders, compact control typography and restrained blue accents. Design for mobile screens first. Support Safari and Chromium. Use semantic HTML, visible focus, labelled fields, and touch targets of at least 44 CSS pixels. Do not add PWA support, dark mode, or decorative blur effects.
 
 Release 1 pages: Dashboard, Sources, Rules, Matched Messages, Connectors, Activity Log, and Settings. Add Posts and Schedules in Phase 2. Use bottom navigation for frequent actions and a More page for other pages. Show loading, empty, error, and disconnected states.
 
