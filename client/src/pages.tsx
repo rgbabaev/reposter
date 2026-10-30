@@ -1,7 +1,9 @@
+import { Button } from "./web-awesome";
+import { Dialog, confirmAction } from "./dialog";
 import { EntityList, usePageClamp, type BulkAction } from "./entity-list";
 import { MatchImageGallery } from "./match-images";
 import { ruleHeading } from "@monitor/shared";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import type {
   Activity,
   AttachmentType,
@@ -84,7 +86,7 @@ export function Dashboard() {
             </Link>
           </section>
           {!data.sources && (
-            <div class="card callout">
+            <wa-card class="card callout">
               <h2>Start monitoring</h2>
               <p>Connect Telegram, choose sources, then add text rules.</p>
               <div class="actions">
@@ -95,7 +97,7 @@ export function Dashboard() {
                   Choose sources
                 </Link>
               </div>
-            </div>
+            </wa-card>
           )}
         </>
       )}
@@ -175,23 +177,29 @@ export function SourcesPage() {
         title="Sources"
         description="Choose the Telegram chats and topics you want to monitor."
         action={
-          <button
+          <Button
+            variant="brand"
+            appearance="accent"
             type="button"
             class="primary"
             onClick={() => setShowDiscovery(!showDiscovery)}
           >
             {showDiscovery ? "Close discovery" : "Add sources"}
-          </button>
+          </Button>
         }
       />
       <ErrorNotice message={action.error} />
       {showDiscovery && (
-        <section class="card discovery" aria-labelledby="discovery-title">
+        <wa-card
+          role="region"
+          class="card discovery"
+          aria-labelledby="discovery-title"
+        >
           <div class="section-heading">
             <h2 id="discovery-title">Accessible sources</h2>
-            <button type="button" disabled={action.busy} onClick={refresh}>
+            <Button type="button" disabled={action.busy} onClick={refresh}>
               {action.busy ? "Working…" : "Refresh list"}
-            </button>
+            </Button>
           </div>
           <p class="muted">
             Refresh to discover groups, channels, private chats, and forum
@@ -223,7 +231,7 @@ export function SourcesPage() {
                               source.kind.slice(1)}
                         </span>
                       </div>
-                      <button
+                      <Button
                         type="button"
                         disabled={action.busy || added}
                         onClick={() => select(source)}
@@ -234,7 +242,7 @@ export function SourcesPage() {
                         }
                       >
                         {added ? "Selected" : "Monitor"}
-                      </button>
+                      </Button>
                     </li>
                   );
                 })}
@@ -248,7 +256,7 @@ export function SourcesPage() {
               </Empty>
             )
           )}
-        </section>
+        </wa-card>
       )}
       <section aria-labelledby="selected-title">
         <h2 id="selected-title">Monitored sources</h2>
@@ -262,7 +270,7 @@ export function SourcesPage() {
           actions={bulkActions}
           itemLabel={(source) => source.name}
           renderItem={(source) => (
-            <article class="card">
+            <wa-card role="article" class="card">
               <div class="card-heading">
                 <div>
                   <h3>{source.name}</h3>
@@ -273,9 +281,12 @@ export function SourcesPage() {
                         source.kind.slice(1)}
                   </p>
                 </div>
-                <span class={"badge " + (source.enabled ? "good" : "neutral")}>
+                <wa-badge
+                  variant={source.enabled ? "success" : "neutral"}
+                  class="badge"
+                >
                   {source.enabled ? "Enabled" : "Disabled"}
-                </span>
+                </wa-badge>
               </div>
               {source.error && (
                 <p class="error-text">
@@ -288,7 +299,7 @@ export function SourcesPage() {
                 {utc(source.selectedAt)}
               </p>
               <div class="actions">
-                <button
+                <Button
                   type="button"
                   disabled={action.busy}
                   onClick={() =>
@@ -302,20 +313,22 @@ export function SourcesPage() {
                   }
                 >
                   {source.enabled ? "Disable" : "Enable"}
-                </button>
+                </Button>
                 <Link
                   class="button"
                   href={"/rules/new?source=" + encodeURIComponent(source.id)}
                 >
                   Add rule
                 </Link>
-                <button
+                <Button
+                  variant="danger"
+                  appearance="plain"
                   type="button"
                   class="danger subtle"
                   disabled={action.busy}
-                  onClick={() => {
+                  onClick={async () => {
                     if (
-                      confirm(
+                      await confirmAction(
                         `Remove “${source.name}” and its rule assignments? Stored matches and queued notifications will be kept.`,
                       )
                     )
@@ -328,9 +341,9 @@ export function SourcesPage() {
                   }}
                 >
                   Remove
-                </button>
+                </Button>
               </div>
-            </article>
+            </wa-card>
           )}
           emptyTitle="No monitored sources"
           emptyDescription={
@@ -397,7 +410,7 @@ export function RulesPage() {
         actions={bulkActions}
         itemLabel={ruleHeading}
         renderItem={(rule) => (
-          <article class="card">
+          <wa-card role="article" class="card">
             <div class="card-heading">
               <div>
                 <h2>{ruleHeading(rule)}</h2>
@@ -413,9 +426,12 @@ export function RulesPage() {
                     : "Unassigned"}
                 </p>
               </div>
-              <span class={"badge " + (rule.enabled ? "good" : "neutral")}>
+              <wa-badge
+                variant={rule.enabled ? "success" : "neutral"}
+                class="badge"
+              >
                 {rule.enabled ? "Enabled" : "Disabled"}
-              </span>
+              </wa-badge>
             </div>
             <ul class="conditions">
               {rule.conditions.map((condition, index) => (
@@ -434,7 +450,7 @@ export function RulesPage() {
               <Link href={"/rules/" + rule.id + "/edit"} class="button">
                 Edit
               </Link>
-              <button
+              <Button
                 type="button"
                 disabled={action.busy}
                 onClick={() =>
@@ -448,14 +464,16 @@ export function RulesPage() {
                 }
               >
                 {rule.enabled ? "Disable" : "Enable"}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="danger"
+                appearance="plain"
                 type="button"
                 class="danger subtle"
                 disabled={action.busy}
-                onClick={() => {
+                onClick={async () => {
                   if (
-                    confirm(
+                    await confirmAction(
                       `Delete “${ruleHeading(rule)}”? Existing matches will be kept.`,
                     )
                   )
@@ -466,9 +484,9 @@ export function RulesPage() {
                 }}
               >
                 Delete
-              </button>
+              </Button>
             </div>
-          </article>
+          </wa-card>
         )}
         emptyTitle="No rules yet"
         emptyDescription={
@@ -561,7 +579,7 @@ function RuleForm({ initial, sources }: { initial?: Rule; sources: Source[] }) {
   ];
   return (
     <form
-      class="card form"
+      class="form"
       onSubmit={(event) => {
         event.preventDefault();
         void action.run(async () => {
@@ -573,17 +591,18 @@ function RuleForm({ initial, sources }: { initial?: Rule; sources: Source[] }) {
         });
       }}
     >
-      <ErrorNotice message={action.error} />
-      <fieldset>
-        <legend>Sources ({draft.sourceIds.length} selected)</legend>
-        <p>
-          Edits and enabling or disabling this rule apply to every assigned
-          source.
-        </p>
-        {sources.map((source) => (
-          <label class="check" key={source.id}>
-            <input
-              type="checkbox"
+      <wa-card class="card">
+        <ErrorNotice message={action.error} />
+        <fieldset>
+          <legend>Sources ({draft.sourceIds.length} selected)</legend>
+          <p>
+            Edits and enabling or disabling this rule apply to every assigned
+            source.
+          </p>
+          {sources.map((source) => (
+            <wa-checkbox
+              class="check"
+              key={source.id}
               checked={draft.sourceIds.includes(source.id)}
               onChange={(event) =>
                 setDraft({
@@ -593,92 +612,100 @@ function RuleForm({ initial, sources }: { initial?: Rule; sources: Source[] }) {
                     : draft.sourceIds.filter((id) => id !== source.id),
                 })
               }
-            />
-            {source.name}
-            {source.enabled ? "" : " (disabled)"}
-          </label>
-        ))}
-      </fieldset>
-      <fieldset>
-        <legend>Text conditions</legend>
-        <p class="muted">
-          Every condition must pass. Matching ignores letter case and preserves
-          accents.
-        </p>
-        {draft.conditions.map((condition, index) => (
-          <div class="condition-editor" key={index}>
-            <label class="field">
-              Condition {index + 1} type
-              <select
-                value={condition.kind}
-                onChange={(event) =>
-                  updateCondition(index, {
-                    kind: event.currentTarget.value as TextCondition["kind"],
-                  })
-                }
-              >
-                {Object.entries(conditionLabels).map(([kind, label]) => (
-                  <option value={kind} key={kind}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label class="field">
-              {condition.kind === "hashtag"
-                ? "Tag, with or without #"
-                : "Text to match"}
-              <input
-                required
-                maxLength={500}
-                value={condition.value}
-                onInput={(event) =>
-                  updateCondition(index, { value: event.currentTarget.value })
-                }
-                autoComplete="off"
-              />
-            </label>
-            {draft.conditions.length > 1 && (
-              <button
-                type="button"
-                class="danger subtle"
-                onClick={() =>
-                  setDraft({
-                    ...draft,
-                    conditions: draft.conditions.filter((_, i) => i !== index),
-                  })
-                }
-              >
-                Remove condition {index + 1}
-              </button>
-            )}
-          </div>
-        ))}
-        <button
-          type="button"
-          disabled={draft.conditions.length >= 20}
-          onClick={() =>
-            setDraft({
-              ...draft,
-              conditions: [...draft.conditions, { kind: "part", value: "" }],
-            })
-          }
-        >
-          Add condition
-        </button>
-      </fieldset>
-      <fieldset>
-        <legend>Attachment condition (optional)</legend>
-        <p class="muted">
-          Leave all unchecked to match text alone. Select Image to require text
-          and an image. With several types selected, one selected type is
-          sufficient.
-        </p>
-        <div class="attachment-options">
-          {types.map((type) => (
-            <label class="check" key={type}>
-              <input
-                type="checkbox"
+            >
+              {source.name}
+              {source.enabled ? "" : " (disabled)"}
+            </wa-checkbox>
+          ))}
+        </fieldset>
+        <fieldset>
+          <legend>Text conditions</legend>
+          <p class="muted">
+            Every condition must pass. Matching ignores letter case and
+            preserves accents.
+          </p>
+          {draft.conditions.map((condition, index) => (
+            <div class="condition-editor" key={index}>
+              <div class="field">
+                <wa-select
+                  label={`Condition ${index + 1} type`}
+                  value={condition.kind}
+                  onChange={(event) =>
+                    updateCondition(index, {
+                      kind: event.currentTarget.value as TextCondition["kind"],
+                    })
+                  }
+                >
+                  {Object.entries(conditionLabels).map(([kind, label]) => (
+                    <wa-option value={kind} key={kind}>
+                      {label}
+                    </wa-option>
+                  ))}
+                </wa-select>
+              </div>
+              <div class="field">
+                <wa-input
+                  label={
+                    condition.kind === "hashtag"
+                      ? "Tag, with or without #"
+                      : "Text to match"
+                  }
+                  required
+                  maxlength={500}
+                  value={condition.value}
+                  onInput={(event) =>
+                    updateCondition(index, {
+                      value: event.currentTarget.value ?? "",
+                    })
+                  }
+                  autocomplete="off"
+                ></wa-input>
+              </div>
+              {draft.conditions.length > 1 && (
+                <Button
+                  variant="danger"
+                  appearance="plain"
+                  type="button"
+                  class="danger subtle"
+                  onClick={() =>
+                    setDraft({
+                      ...draft,
+                      conditions: draft.conditions.filter(
+                        (_, i) => i !== index,
+                      ),
+                    })
+                  }
+                >
+                  Remove condition {index + 1}
+                </Button>
+              )}
+            </div>
+          ))}
+          <Button
+            type="button"
+            disabled={draft.conditions.length >= 20}
+            onClick={() =>
+              setDraft({
+                ...draft,
+                conditions: [...draft.conditions, { kind: "part", value: "" }],
+              })
+            }
+          >
+            Add condition
+          </Button>
+        </fieldset>
+        <fieldset>
+          <legend>Attachment condition (optional)</legend>
+          <p class="muted">
+            Leave all unchecked to match text alone. Select Image to require
+            text and an image. With several types selected, one selected type is
+            sufficient.
+          </p>
+          <div class="attachment-options">
+            {types.map((type) => (
+              <wa-checkbox
+                class="check"
+                key={type}
                 checked={draft.attachmentTypes.includes(type)}
                 onChange={(event) =>
                   setDraft({
@@ -688,31 +715,38 @@ function RuleForm({ initial, sources }: { initial?: Rule; sources: Source[] }) {
                       : draft.attachmentTypes.filter((t) => t !== type),
                   })
                 }
-              />
-              {type.charAt(0).toUpperCase() + type.slice(1)}
-            </label>
-          ))}
+              >
+                {type.charAt(0).toUpperCase() + type.slice(1)}
+              </wa-checkbox>
+            ))}
+          </div>
+        </fieldset>
+        <div class="actions">
+          <Button
+            variant="brand"
+            appearance="accent"
+            type="submit"
+            class="primary"
+            disabled={action.busy}
+          >
+            {action.busy ? "Saving…" : "Save rule"}
+          </Button>
+          <Link class="button" href="/rules">
+            Cancel
+          </Link>
         </div>
-      </fieldset>
-      <div class="actions">
-        <button type="submit" class="primary" disabled={action.busy}>
-          {action.busy ? "Saving…" : "Save rule"}
-        </button>
-        <Link class="button" href="/rules">
-          Cancel
-        </Link>
-      </div>
-      <p class="footnote">
-        Changes apply to future processing, including recovered messages. Stored
-        matches keep their original rule names.
-      </p>
+        <p class="footnote">
+          Changes apply to future processing, including recovered messages.
+          Stored matches keep their original rule names.
+        </p>
+      </wa-card>
     </form>
   );
 }
 
 function MatchCard({ match }: { match: Match }) {
   return (
-    <article class="card match-card">
+    <wa-card role="article" class="card match-card">
       <div class="card-heading">
         <h2>
           <Link href={"/matches/" + match.id}>{match.sourceName}</Link>
@@ -720,13 +754,20 @@ function MatchCard({ match }: { match: Match }) {
         <div class="tags" aria-label="Notification delivery">
           {(match.deliveries ?? (match.delivery ? [match.delivery] : [])).map(
             (job) => (
-              <span
+              <wa-badge
+                variant={
+                  job.status === "failed"
+                    ? "danger"
+                    : job.status === "sent"
+                      ? "success"
+                      : "neutral"
+                }
                 key={job.id}
-                class={`badge ${job.status === "failed" ? "bad" : job.status === "sent" ? "good" : "neutral"}`}
+                class="badge"
               >
                 {job.channel === "telegram" ? "Telegram" : "Email"}{" "}
                 {job.status === "sent" ? "accepted" : job.status}
-              </span>
+              </wa-badge>
             ),
           )}
         </div>
@@ -740,36 +781,30 @@ function MatchCard({ match }: { match: Match }) {
       <MatchImageGallery match={match} />
       <div class="tags" aria-label="Matched rules">
         {match.ruleNames.map((name, index) => (
-          <span class="tag" key={index}>
+          <wa-tag class="tag" key={index}>
             {name}
-          </span>
+          </wa-tag>
         ))}
       </div>
       <Link class="detail-link" href={"/matches/" + match.id}>
         View match <span aria-hidden="true">›</span>
       </Link>
-    </article>
+    </wa-card>
   );
 }
 export function MatchesPage() {
-  const dialog = useRef<HTMLDialogElement>(null);
   const [filterOpen, setFilterOpen] = useState(false);
-  useEffect(() => {
-    if (!filterOpen) return;
-    const element = dialog.current!;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    element.showModal();
-    return () => {
-      element.close();
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [filterOpen]);
   const [page, setPage] = useState(1);
   const [text, setText] = useState("");
   const [rules, setRules] = useState<string[]>([]);
-  const [filters, setFilters] = useState<{ text: string; rules: string[] }>({ text: "", rules: [] });
-  const parameters = new URLSearchParams({ page: String(page), text: filters.text });
+  const [filters, setFilters] = useState<{ text: string; rules: string[] }>({
+    text: "",
+    rules: [],
+  });
+  const parameters = new URLSearchParams({
+    page: String(page),
+    text: filters.text,
+  });
   filters.rules.forEach((rule) => parameters.append("rule", rule));
   const query = parameters.toString();
   const remote = useRemote<MatchPage>(`/matches?${query}`, true);
@@ -800,67 +835,107 @@ export function MatchesPage() {
         scope={query}
         actions={bulkActions}
         filters={
-          <button type="button" class={filtered ? "filter-button active" : "filter-button"}
-            aria-haspopup="dialog" aria-label={filtered ? "Filter, filters are on" : "Filter"}
+          <Button
+            type="button"
+            class={filtered ? "filter-button active" : "filter-button"}
+            aria-haspopup="dialog"
+            aria-label={filtered ? "Filter, filters are on" : "Filter"}
             onClick={() => {
-            setText(filters.text);
-            setRules([...filters.rules]);
-            setFilterOpen(true);
-          }}>
-            Filter{filtered && <span class="filter-status" aria-hidden="true">On</span>}
-          </button>
+              setText(filters.text);
+              setRules([...filters.rules]);
+              setFilterOpen(true);
+            }}
+          >
+            Filter
+            {filtered && (
+              <span class="filter-status" aria-hidden="true">
+                On
+              </span>
+            )}
+          </Button>
         }
         itemLabel={(match) => match.sourceName}
         renderItem={(match) => <MatchCard match={match} />}
-        emptyTitle={filtered ? "No matches for these filters" : "No matched messages"}
+        emptyTitle={
+          filtered ? "No matches for these filters" : "No matched messages"
+        }
         emptyDescription={
-          filtered ? "Change or clear the filters to see more matches." : "Enabled sources and rules will add matching messages here."
+          filtered
+            ? "Change or clear the filters to see more matches."
+            : "Enabled sources and rules will add matching messages here."
         }
       />
-      <dialog ref={dialog} class="match-filter-dialog" aria-labelledby="match-filter-title"
-        onClose={() => setFilterOpen(false)}>
-        <form onSubmit={(event) => {
-          event.preventDefault();
-          setPage(1);
-          setFilters({ text: text.trim(), rules });
-          setFilterOpen(false);
-        }}>
-          <h2 id="match-filter-title">Filter matches</h2>
-          <div class="field">
-            <label for="match-text">Message text</label>
-            <input id="match-text" type="search" value={text}
-              onInput={(event) => setText(event.currentTarget.value)} />
-          </div>
-          <fieldset class="match-rule-options">
-            <legend>Matched rules</legend>
-            <p class="muted">Match any selected rule. Leave all unchecked for all rules.</p>
-            {ruleNames.map((name) => (
-              <label class="check" key={name}>
-                <input type="checkbox" checked={rules.includes(name)}
+      {filterOpen && (
+        <Dialog
+          class="match-filter-dialog"
+          aria-labelledby="match-filter-title"
+          onClose={() => setFilterOpen(false)}
+        >
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              setPage(1);
+              setFilters({ text: text.trim(), rules });
+              setFilterOpen(false);
+            }}
+          >
+            <h2 id="match-filter-title">Filter matches</h2>
+            <div class="field">
+              <wa-input
+                label="Message text"
+                id="match-text"
+                type="search"
+                value={text}
+                onInput={(event) => setText(event.currentTarget.value ?? "")}
+              />
+            </div>
+            <fieldset class="match-rule-options">
+              <legend>Matched rules</legend>
+              <p class="muted">
+                Match any selected rule. Leave all unchecked for all rules.
+              </p>
+              {ruleNames.map((name) => (
+                <wa-checkbox
+                  class="check"
+                  key={name}
+                  checked={rules.includes(name)}
                   onChange={(event) => {
                     const checked = event.currentTarget.checked;
-                    setRules((selected) => checked
-                      ? [...selected, name]
-                      : selected.filter((rule) => rule !== name));
-                  }} />
-                {name}
-              </label>
-            ))}
-            {!ruleNames.length && <p>No saved rules</p>}
-          </fieldset>
-          <div class="actions">
-            <button type="submit">Apply filters</button>
-            <button type="button" onClick={() => {
-              setText("");
-              setRules([]);
-              setFilters({ text: "", rules: [] });
-              setPage(1);
-              setFilterOpen(false);
-            }}>Clear filters</button>
-            <button type="button" onClick={() => setFilterOpen(false)}>Cancel</button>
-          </div>
-        </form>
-      </dialog>
+                    setRules((selected) =>
+                      checked
+                        ? [...selected, name]
+                        : selected.filter((rule) => rule !== name),
+                    );
+                  }}
+                >
+                  {name}
+                </wa-checkbox>
+              ))}
+              {!ruleNames.length && <p>No saved rules</p>}
+            </fieldset>
+            <div class="actions">
+              <Button variant="neutral" appearance="outlined" type="submit">
+                Apply filters
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  setText("");
+                  setRules([]);
+                  setFilters({ text: "", rules: [] });
+                  setPage(1);
+                  setFilterOpen(false);
+                }}
+              >
+                Clear filters
+              </Button>
+              <Button type="button" onClick={() => setFilterOpen(false)}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </Dialog>
+      )}
     </>
   );
 }
@@ -884,7 +959,7 @@ export function MatchDetail({ id }: { id: string }) {
       ) : (
         match && (
           <>
-            <article class="card">
+            <wa-card role="article" class="card">
               <h2>{match.sourceName}</h2>
               <dl class="details">
                 <div>
@@ -944,8 +1019,12 @@ export function MatchDetail({ id }: { id: string }) {
                 {match.text || "No text available"}
               </div>
               <MatchImageGallery match={match} />
-            </article>
-            <section class="card" aria-labelledby="delivery-title">
+            </wa-card>
+            <wa-card
+              role="region"
+              class="card"
+              aria-labelledby="delivery-title"
+            >
               <h2 id="delivery-title">Notification delivery</h2>
               {(
                 match.deliveries ?? (match.delivery ? [match.delivery] : [])
@@ -974,20 +1053,21 @@ export function MatchDetail({ id }: { id: string }) {
                 confirm it was read. An uncertain send result can cause a
                 duplicate notification.
               </p>
-            </section>
-            <section class="card">
+            </wa-card>
+            <wa-card role="region" class="card">
               <h2>Delete stored match</h2>
               <p>
                 This keeps the Telegram message and any notifications already
                 queued.
               </p>
-              <button
+              <Button
+                variant="danger"
                 type="button"
                 class="danger"
                 disabled={action.busy}
-                onClick={() => {
+                onClick={async () => {
                   if (
-                    confirm(
+                    await confirmAction(
                       "Delete this stored match? Telegram content and queued notifications will be kept.",
                     )
                   )
@@ -998,8 +1078,8 @@ export function MatchDetail({ id }: { id: string }) {
                 }}
               >
                 Delete match
-              </button>
-            </section>
+              </Button>
+            </wa-card>
           </>
         )
       )}
@@ -1017,7 +1097,7 @@ export function ConnectorsPage({ status }: { status?: ConnectorStatus }) {
         title="Connectors"
         description="Telegram monitoring from your personal account."
       />
-      <section class="card">
+      <wa-card role="region" class="card">
         <div class="card-heading">
           <h2>Telegram</h2>
           <Status state={status?.state} />
@@ -1077,7 +1157,7 @@ export function ConnectorsPage({ status }: { status?: ConnectorStatus }) {
           Deleted or inaccessible messages cannot be recovered. Media content is
           not downloaded.
         </p>
-      </section>
+      </wa-card>
     </>
   );
 }
@@ -1130,7 +1210,7 @@ export function ActivityPage() {
         description="Operational incidents and durable email and Telegram delivery."
       />
       <div class="segmented" role="group" aria-label="Activity view">
-        <button
+        <Button
           type="button"
           class={view === "events" ? "selected" : ""}
           aria-pressed={view === "events"}
@@ -1140,8 +1220,8 @@ export function ActivityPage() {
           }}
         >
           Events
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           class={view === "delivery" ? "selected" : ""}
           aria-pressed={view === "delivery"}
@@ -1151,7 +1231,7 @@ export function ActivityPage() {
           }}
         >
           Notification delivery
-        </button>
+        </Button>
       </div>
       <ErrorNotice message={action.error} />
       {view === "events" ? (
@@ -1166,23 +1246,23 @@ export function ActivityPage() {
           actions={eventBulkActions}
           itemLabel={(event) => event.code}
           renderItem={(event) => (
-            <article class="card">
+            <wa-card role="article" class="card">
               <div class="card-heading">
                 <h2>{event.code.replaceAll("_", " ")}</h2>
-                <span
-                  class={
-                    "badge " +
-                    (event.level === "error" && !event.resolvedAt
-                      ? "bad"
-                      : "neutral")
+                <wa-badge
+                  variant={
+                    event.level === "error" && !event.resolvedAt
+                      ? "danger"
+                      : "neutral"
                   }
+                  class="badge"
                 >
                   {event.level === "info"
                     ? "Info"
                     : event.resolvedAt
                       ? "Resolved"
                       : "Open incident"}
-                </span>
+                </wa-badge>
               </div>
               <p>{event.message}</p>
               <p class="muted">
@@ -1194,7 +1274,7 @@ export function ActivityPage() {
                 Opened {utc(event.openedAt)}
                 {event.resolvedAt ? " · Resolved " + utc(event.resolvedAt) : ""}
               </p>
-            </article>
+            </wa-card>
           )}
           emptyTitle="No activity yet"
           emptyDescription={
@@ -1214,7 +1294,7 @@ export function ActivityPage() {
             actions={jobBulkActions}
             itemLabel={(job) => `${job.channel} ${job.kind} notification`}
             renderItem={(job) => (
-              <article class="card">
+              <wa-card role="article" class="card">
                 <p class="muted">
                   {job.channel === "telegram" ? "Telegram report" : "Email"}
                 </p>
@@ -1236,7 +1316,7 @@ export function ActivityPage() {
                     })
                   }
                 />
-              </article>
+              </wa-card>
             )}
             emptyTitle="No notification jobs"
             emptyDescription={
@@ -1298,7 +1378,11 @@ export function SettingsPage({ onLogout }: { onLogout: () => void }) {
       ) : (
         remote.data && (
           <>
-            <section class="card" aria-labelledby="notification-channels-title">
+            <wa-card
+              role="region"
+              class="card"
+              aria-labelledby="notification-channels-title"
+            >
               <h2 id="notification-channels-title">Notification channels</h2>
               <p>
                 Choose where to receive match and incident reports. Changes
@@ -1306,30 +1390,25 @@ export function SettingsPage({ onLogout }: { onLogout: () => void }) {
               </p>
               <fieldset disabled={action.busy}>
                 <legend>Delivery channels</legend>
-                <label class="check">
-                  <input
-                    type="checkbox"
-                    checked={selectedChannels?.email ?? false}
-                    onChange={(event) =>
-                      void toggleChannel("email", event.currentTarget.checked)
-                    }
-                  />
+                <wa-switch
+                  class="check"
+                  checked={selectedChannels?.email ?? false}
+                  onChange={(event) =>
+                    void toggleChannel("email", event.currentTarget.checked)
+                  }
+                >
                   Email notifications
-                </label>
-                <label class="check">
-                  <input
-                    type="checkbox"
-                    checked={selectedChannels?.telegram ?? false}
-                    disabled={!remote.data.telegramNotificationsConfigured}
-                    onChange={(event) =>
-                      void toggleChannel(
-                        "telegram",
-                        event.currentTarget.checked,
-                      )
-                    }
-                  />
+                </wa-switch>
+                <wa-switch
+                  class="check"
+                  checked={selectedChannels?.telegram ?? false}
+                  disabled={!remote.data.telegramNotificationsConfigured}
+                  onChange={(event) =>
+                    void toggleChannel("telegram", event.currentTarget.checked)
+                  }
+                >
                   Telegram notifications
-                </label>
+                </wa-switch>
               </fieldset>
               {!remote.data.telegramNotificationsConfigured && (
                 <p class="muted">
@@ -1351,8 +1430,8 @@ export function SettingsPage({ onLogout }: { onLogout: () => void }) {
                 channel. Re-enable to resume pending jobs. A send already in
                 progress may finish.
               </p>
-            </section>
-            <section class="card">
+            </wa-card>
+            <wa-card role="region" class="card">
               <h2>Application</h2>
               <dl class="details">
                 <div>
@@ -1397,14 +1476,14 @@ export function SettingsPage({ onLogout }: { onLogout: () => void }) {
                 are managed in the protected configuration file. Restart the
                 application after changing that file.
               </p>
-            </section>
+            </wa-card>
           </>
         )
       )}
-      <section class="card">
+      <wa-card role="region" class="card">
         <h2>Access</h2>
         <p>Sign out of this browser to invalidate its session.</p>
-        <button
+        <Button
           type="button"
           disabled={action.busy}
           onClick={() =>
@@ -1415,8 +1494,8 @@ export function SettingsPage({ onLogout }: { onLogout: () => void }) {
           }
         >
           {action.busy ? "Signing out…" : "Sign out"}
-        </button>
-      </section>
+        </Button>
+      </wa-card>
     </>
   );
 }

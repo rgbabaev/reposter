@@ -19,14 +19,14 @@ Use TypeScript, ESM, Node.js 24 LTS, and npm workspaces. Pin the supported Node.
 | Directory | Responsibility |
 | --- | --- |
 | `server/` | HTTP API, authentication, application services, SQLite, workers, connector adapters, CLI |
-| `client/` | Preact UI, Vite build, plain CSS |
+| `client/` | Preact UI, Web Awesome components, Vite build, plain CSS |
 | `shared/` | API types and source-independent data types; no runtime dependencies |
 
 Use `node:http`, `node:crypto`, and `node:sqlite`. Use SQL migrations and prepared statements. Do not add an ORM. Keep database calls short. The SQLite API is a release candidate in Node.js 24; keep it behind a small storage module.
 
 Use GramJS for Telegram and Nodemailer for SMTP. Select a small QR-code encoder for CLI setup. These are justified dependencies. GramJS has dependencies of its own. Prefer packages without runtime dependencies for other needs. Record the purpose of each direct dependency. Use npm lockfiles and `npm ci`.
 
-Use native browser APIs for requests and navigation. Do not add a UI kit, state library, message broker, plugin loader, or separate scheduler service.
+Use native browser APIs for requests and navigation. Use the free Web Awesome custom elements directly with Preact, without React compatibility. Bundle components and theme assets locally. Retain native file upload and the custom Telegram rich text editor. Do not add a state library, message broker, plugin loader, or separate scheduler service.
 
 ## 3. Connector boundary
 
@@ -94,7 +94,7 @@ Delete activity events after 30 days. Retain open incidents and pending delivery
 
 ## 7. Web UI and access
 
-Use English, a light theme, native-style controls, clear spacing, and iOS-style navigation. Design for mobile screens first. Support Safari and Chromium. Use semantic HTML, visible focus, labelled fields, and touch targets of at least 44 CSS pixels. Do not add PWA support, dark mode, or decorative blur effects.
+Use English, a light theme, Web Awesome controls, clear spacing, and iOS-style navigation. Follow the Web Awesome documentation site’s white surfaces, light borders, compact control typography and restrained blue accents. Design for mobile screens first. Support Safari and Chromium. Use semantic HTML, visible focus, labelled fields, and touch targets of at least 44 CSS pixels. Do not add PWA support, dark mode, or decorative blur effects.
 
 Release 1 pages: Dashboard, Sources, Rules, Matched Messages, Connectors, Activity Log, and Settings. Add Posts and Schedules in Phase 2. Use bottom navigation for frequent actions and a More page for other pages. Show loading, empty, error, and disconnected states.
 

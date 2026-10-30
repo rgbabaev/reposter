@@ -221,3 +221,21 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 
 - [x] Add combined message-text and historical rule-heading filters before pagination, in a modal opened by Filter next to Select, with Apply/Clear/Cancel controls and selection reset.
 - Check: type/build checks and disposable storage checks cover Unicode text, literal search, combined filters and pagination.
+
+### 28. Share modal dialog behavior
+
+- [x] Extract native dialog lifecycle, scroll locking, accessible naming and optional backdrop dismissal; reuse for match filters and enlarged images.
+- Check: type/build checks and Chromium/WebKit checks cover filter actions, Escape/focus restoration and image navigation/zoom.
+
+### 29. Migrate to Web Awesome
+
+- [x] Bundle pinned free Web Awesome components and the light theme directly with Preact, without React compatibility.
+- [x] Migrate controls, cards, status feedback, confirmations and shared dialogs; retain native image upload and Telegram document editing.
+- [x] Verify validation/submission, selects, switches, editor selection, bulk actions, modal focus and mobile layouts in Chromium/WebKit.
+- Check: disposable API/database fixtures cover saved values, partial failures, confirmations, image zoom and 320/390/900px layouts. See [update-checks.md](update-checks.md).
+
+### 30. Refine Web Awesome appearance
+
+- [x] Match the documentation site’s white surfaces, typography, fine borders and restrained accents using shared theme tokens.
+- [x] Refine cards, metrics, navigation, form spacing and the editor toolbar while retaining accessible controls.
+- Check: production/type checks and Chromium/WebKit regressions cover forms, lists and dialogs; visual checks cover 320/390/900/1280px layouts.

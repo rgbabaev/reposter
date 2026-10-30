@@ -1,3 +1,5 @@
+import { Button } from "./web-awesome";
+import type WaInput from "@awesome.me/webawesome/dist/components/input/input.js";
 import type { TextStyle } from "@monitor/shared";
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import {
@@ -57,7 +59,7 @@ export function PostTextEditor({
   const [linkOpen, setLinkOpen] = useState(false);
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
-  const linkInput = useRef<HTMLInputElement>(null);
+  const linkInput = useRef<WaInput>(null);
   const updateHistory = () =>
     setHistory({ undo: !!undo.current.length, redo: !!redo.current.length });
   const remember = () => {
@@ -227,12 +229,12 @@ export function PostTextEditor({
         role="group"
         aria-label="Text formatting"
         onPointerDown={(event) => {
-          if ((event.target as Element).closest("button"))
+          if ((event.target as Element).closest("wa-button"))
             event.preventDefault();
         }}
       >
         {formats.map((format) => (
-          <button
+          <Button
             key={format.type}
             type="button"
             class={`format-button format-${format.type}`}
@@ -242,25 +244,25 @@ export function PostTextEditor({
             onClick={() => apply({ type: format.type })}
           >
             {format.text ?? format.label}
-          </button>
+          </Button>
         ))}
-        <button
+        <Button
           type="button"
           aria-pressed={active.some((mark) => mark.type === "link")}
           aria-expanded={linkOpen}
           onClick={openLink}
         >
           Link
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           aria-label="Clear formatting"
           title="Clear formatting"
           onClick={() => apply()}
         >
           Clear
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           aria-label="Undo"
           title="Undo (Ctrl/Cmd+Z)"
@@ -268,8 +270,8 @@ export function PostTextEditor({
           onClick={() => travel("undo")}
         >
           ↶
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           aria-label="Redo"
           title="Redo (Ctrl/Cmd+Shift+Z)"
@@ -277,19 +279,19 @@ export function PostTextEditor({
           onClick={() => travel("redo")}
         >
           ↷
-        </button>
+        </Button>
       </div>
       {linkOpen && (
         <div class="post-editor-link">
-          <label class="field">
-            Link URL
-            <input
+          <div class="field">
+            <wa-input
+              label="Link URL"
               ref={linkInput}
               type="text"
-              inputMode="url"
+              inputmode="url"
               value={url}
               placeholder="https://example.com"
-              onInput={(event) => setUrl(event.currentTarget.value)}
+              onInput={(event) => setUrl(event.currentTarget.value ?? "")}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault();
@@ -300,13 +302,13 @@ export function PostTextEditor({
                   closeLink();
                 }
               }}
-            />
-          </label>
-          <button type="button" onClick={saveLink}>
+            ></wa-input>
+          </div>
+          <Button type="button" onClick={saveLink}>
             Apply link
-          </button>
+          </Button>
           {active.some((mark) => mark.type === "link") && (
-            <button
+            <Button
               type="button"
               onClick={() => {
                 apply(active.find((mark) => mark.type === "link"));
@@ -314,11 +316,11 @@ export function PostTextEditor({
               }}
             >
               Remove link
-            </button>
+            </Button>
           )}
-          <button type="button" onClick={closeLink}>
+          <Button type="button" onClick={closeLink}>
             Cancel link
-          </button>
+          </Button>
         </div>
       )}
       <div

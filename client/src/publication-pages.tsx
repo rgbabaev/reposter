@@ -1,3 +1,5 @@
+import { confirmAction } from "./dialog";
+import { Button } from "./web-awesome";
 import { EntityList, type BulkAction } from "./entity-list";
 import { PostTextEditor } from "./post-text-editor";
 import type { TextEntity } from "@monitor/shared";
@@ -68,7 +70,7 @@ export function PostsPage() {
 function PostCard({ post, refresh }: { post: Post; refresh: () => void }) {
   const action = useAction();
   return (
-    <article class="card">
+    <wa-card role="article" class="card">
       <h2>{postHeading(post)}</h2>
       <p class="post-text">{post.text}</p>
       <ImageStrip images={post.images} />
@@ -84,12 +86,12 @@ function PostCard({ post, refresh }: { post: Post; refresh: () => void }) {
         <Link class="button" href={`/posts/${post.id}/edit`}>
           Edit post
         </Link>
-        <button
+        <Button
           type="button"
           disabled={action.busy}
-          onClick={() => {
+          onClick={async () => {
             if (
-              confirm(
+              await confirmAction(
                 `Delete “${postHeading(post)}”? Published Telegram messages remain.`,
               )
             )
@@ -100,9 +102,9 @@ function PostCard({ post, refresh }: { post: Post; refresh: () => void }) {
           }}
         >
           Delete post
-        </button>
+        </Button>
       </div>
-    </article>
+    </wa-card>
   );
 }
 export function DestinationSelect({
@@ -119,29 +121,29 @@ export function DestinationSelect({
   onChange: (value: string) => void;
 }) {
   return (
-    <label class="field">
-      Destination
-      <select
+    <div class="field">
+      <wa-select
+        label="Destination"
         required={required}
         value={value}
-        onChange={(event) => onChange(event.currentTarget.value)}
+        onChange={(event) => onChange(String(event.currentTarget.value))}
       >
-        <option value="">{placeholder}</option>
+        <small slot="hint">
+          Add the destination in Sources first. Publication uses your personal
+          account.
+        </small>
+        <wa-option value="">{placeholder}</wa-option>
         {sources
           .filter(
             (source) => source.kind === "group" || source.kind === "topic",
           )
           .map((source) => (
-            <option key={source.id} value={source.id}>
+            <wa-option key={source.id} value={source.id}>
               {source.name}
-            </option>
+            </wa-option>
           ))}
-      </select>
-      <small>
-        Add the destination in Sources first. Publication uses your personal
-        account.
-      </small>
-    </label>
+      </wa-select>
+    </div>
   );
 }
 function ImageStrip({ images }: { images: PostImage[] }) {
@@ -198,7 +200,6 @@ export function PostEditorPage({ id }: { id?: string }) {
         <Loading />
       ) : (
         <form
-          class="card"
           onSubmit={(event) => {
             event.preventDefault();
             void action.run(async () => {
@@ -210,112 +211,119 @@ export function PostEditorPage({ id }: { id?: string }) {
             });
           }}
         >
-          <PostTextEditor
-            value={{ text, entities }}
-            maxLength={images.length ? 1024 : 4096}
-            onChange={(value) => {
-              setText(value.text);
-              setEntities(value.entities);
-            }}
-          />
-          <label class="field">
-            Add images
-            <input
-              type="file"
-              accept="image/jpeg,image/png"
-              multiple
-              disabled={action.busy}
-              onChange={(event) => {
-                const files = Array.from(event.currentTarget.files || []);
-                event.currentTarget.value = "";
-                void action.run(async () => {
-                  if (
-                    images.length + files.length > 10 ||
-                    files.some((file) => file.size > 5 * 1024 * 1024)
-                  )
-                    throw new Error(
-                      "Use at most ten images, each up to 5 MiB; total limit 20 MiB.",
-                    );
-                  const added = await Promise.all(
-                    files.map(async (file) => {
-                      const base64 = await new Promise<string>(
-                        (resolve, reject) => {
-                          const reader = new FileReader();
-                          reader.onerror = () =>
-                            reject(new Error("Cannot read image."));
-                          reader.onload = () =>
-                            resolve(String(reader.result).split(",")[1]!);
-                          reader.readAsDataURL(file);
-                        },
-                      );
-                      return { name: file.name, mimeType: file.type, base64 };
-                    }),
-                  );
-                  setImages((current) => [...current, ...added]);
-                });
+          <wa-card class="card">
+            <PostTextEditor
+              value={{ text, entities }}
+              maxLength={images.length ? 1024 : 4096}
+              onChange={(value) => {
+                setText(value.text);
+                setEntities(value.entities);
               }}
             />
-            <small>
-              5 MiB per image, 20 MiB per post. Images are sent in the order
-              shown.
-            </small>
-          </label>
-          <div class="stack">
-            {images.map((image, index) => (
-              <div class="image-draft" key={"id" in image ? image.id : index}>
-                <img
-                  src={
-                    "id" in image
-                      ? `/api/post-images/${image.id}`
-                      : `data:${image.mimeType};base64,${image.base64}`
-                  }
-                  alt={`Image ${index + 1}`}
-                />
-                <span>
-                  {index + 1}. {image.name}
-                </span>
-                <button
-                  type="button"
-                  disabled={index === 0}
-                  aria-label={`Move image ${index + 1} earlier`}
-                  onClick={() => moveImage(index, -1)}
-                >
-                  Move earlier
-                </button>
-                <button
-                  type="button"
-                  disabled={index === images.length - 1}
-                  aria-label={`Move image ${index + 1} later`}
-                  onClick={() => moveImage(index, 1)}
-                >
-                  Move later
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setImages((current) =>
-                      current.filter((_, i) => i !== index),
+            <div class="field">
+              <label for="post-images">Add images</label>
+              <input
+                id="post-images"
+                aria-describedby="post-image-help"
+                type="file"
+                accept="image/jpeg,image/png"
+                multiple
+                disabled={action.busy}
+                onChange={(event) => {
+                  const files = Array.from(event.currentTarget.files || []);
+                  event.currentTarget.value = "";
+                  void action.run(async () => {
+                    if (
+                      images.length + files.length > 10 ||
+                      files.some((file) => file.size > 5 * 1024 * 1024)
                     )
-                  }
-                >
-                  Remove image {index + 1}
-                </button>
-              </div>
-            ))}
-          </div>
-          <div class="actions">
-            <button
-              class="primary"
-              disabled={
-                action.busy || text.length > (images.length ? 1024 : 4096)
-              }
-            >
-              Save post
-            </button>
-            <Link class="button" href="/posts">
-              Cancel
-            </Link>
-          </div>
+                      throw new Error(
+                        "Use at most ten images, each up to 5 MiB; total limit 20 MiB.",
+                      );
+                    const added = await Promise.all(
+                      files.map(async (file) => {
+                        const base64 = await new Promise<string>(
+                          (resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onerror = () =>
+                              reject(new Error("Cannot read image."));
+                            reader.onload = () =>
+                              resolve(String(reader.result).split(",")[1]!);
+                            reader.readAsDataURL(file);
+                          },
+                        );
+                        return { name: file.name, mimeType: file.type, base64 };
+                      }),
+                    );
+                    setImages((current) => [...current, ...added]);
+                  });
+                }}
+              />
+              <small id="post-image-help">
+                5 MiB per image, 20 MiB per post. Images are sent in the order
+                shown.
+              </small>
+            </div>
+            <div class="stack">
+              {images.map((image, index) => (
+                <div class="image-draft" key={"id" in image ? image.id : index}>
+                  <img
+                    src={
+                      "id" in image
+                        ? `/api/post-images/${image.id}`
+                        : `data:${image.mimeType};base64,${image.base64}`
+                    }
+                    alt={`Image ${index + 1}`}
+                  />
+                  <span>
+                    {index + 1}. {image.name}
+                  </span>
+                  <Button
+                    type="button"
+                    disabled={index === 0}
+                    aria-label={`Move image ${index + 1} earlier`}
+                    onClick={() => moveImage(index, -1)}
+                  >
+                    Move earlier
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={index === images.length - 1}
+                    aria-label={`Move image ${index + 1} later`}
+                    onClick={() => moveImage(index, 1)}
+                  >
+                    Move later
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      setImages((current) =>
+                        current.filter((_, i) => i !== index),
+                      )
+                    }
+                  >
+                    Remove image {index + 1}
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <div class="actions">
+              <Button
+                variant="brand"
+                appearance="accent"
+                type="submit"
+                class="primary"
+                disabled={
+                  action.busy || text.length > (images.length ? 1024 : 4096)
+                }
+              >
+                Save post
+              </Button>
+              <Link class="button" href="/posts">
+                Cancel
+              </Link>
+            </div>
+          </wa-card>
         </form>
       )}
     </>
@@ -380,7 +388,7 @@ function RunCard({
   const [ids, setIds] = useState(run.sentIds.join(", "));
   const [confirmed, setConfirmed] = useState(false);
   return (
-    <article class="card">
+    <wa-card role="article" class="card">
       <h2>{run.postName}</h2>
       <p>
         {run.destination.name} · <strong>{run.status}</strong>
@@ -406,7 +414,7 @@ function RunCard({
       )}
       <ErrorNotice message={action.error} />
       {run.status === "failed" && (
-        <button
+        <Button
           type="button"
           disabled={action.busy}
           onClick={() =>
@@ -417,15 +425,15 @@ function RunCard({
           }
         >
           Retry run
-        </button>
+        </Button>
       )}
       {(run.status === "queued" || run.status === "failed") && (
-        <button
+        <Button
           type="button"
           disabled={action.busy}
-          onClick={() => {
+          onClick={async () => {
             if (
-              confirm(
+              await confirmAction(
                 "Cancel this run? Any messages already deleted remain deleted.",
               )
             )
@@ -436,7 +444,7 @@ function RunCard({
           }}
         >
           Cancel run
-        </button>
+        </Button>
       )}
       {run.status === "uncertain" && (
         <form
@@ -460,30 +468,29 @@ function RunCard({
             only if you verified that nothing was published. Uncertain runs are
             never automatically resent.
           </p>
-          <label class="field">
-            Confirmed message IDs
-            <input
+          <div class="field">
+            <wa-input
+              label="Confirmed message IDs"
               value={ids}
-              onInput={(event) => setIds(event.currentTarget.value)}
+              onInput={(event) => setIds(String(event.currentTarget.value))}
               placeholder="123, 124"
-            />
-          </label>
-          <label class="check">
-            <input
-              type="checkbox"
-              required
-              checked={confirmed}
-              onChange={(event) => setConfirmed(event.currentTarget.checked)}
-            />
+            ></wa-input>
+          </div>
+          <wa-checkbox
+            class="check"
+            required
+            checked={confirmed}
+            onChange={(event) => setConfirmed(event.currentTarget.checked)}
+          >
             I checked Telegram and confirmed these system-created messages, or
             confirmed nothing was sent.
-          </label>
-          <button disabled={action.busy || !confirmed}>
+          </wa-checkbox>
+          <Button type="submit" disabled={action.busy || !confirmed}>
             Save reviewed result
-          </button>
+          </Button>
         </form>
       )}
-    </article>
+    </wa-card>
   );
 }
 

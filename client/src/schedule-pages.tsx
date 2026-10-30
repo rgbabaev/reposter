@@ -1,3 +1,5 @@
+import { confirmAction } from "./dialog";
+import { Button } from "./web-awesome";
 import { EntityList, type BulkAction } from "./entity-list";
 import { postHeading, scheduleHeading } from "@monitor/shared";
 import { useEffect, useState } from "preact/hooks";
@@ -97,7 +99,7 @@ function ScheduleCard({
 }) {
   const action = useAction();
   return (
-    <article class="card">
+    <wa-card role="article" class="card">
       <h2>{scheduleHeading(schedule)}</h2>
       <p>
         {schedule.destination.name} ·{" "}
@@ -121,7 +123,7 @@ function ScheduleCard({
       )}
       <ErrorNotice message={action.error} />
       <div class="actions">
-        <button
+        <Button
           type="button"
           disabled={action.busy}
           onClick={() =>
@@ -135,8 +137,8 @@ function ScheduleCard({
           }
         >
           {schedule.paused ? "Resume" : "Pause"}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           disabled={action.busy}
           onClick={() =>
@@ -147,20 +149,20 @@ function ScheduleCard({
           }
         >
           Run Now
-        </button>
+        </Button>
         {!schedule.blockedRunId && (
           <Link class="button" href={`/schedules/${schedule.id}/edit`}>
             Edit schedule
           </Link>
         )}
-        <button
+        <Button
           type="button"
           disabled={action.busy || !!schedule.blockedRunId}
-          onClick={() => {
+          onClick={async () => {
             if (
-              !confirm(
+              !(await confirmAction(
                 `Delete “${scheduleHeading(schedule)}”? Future runs stop. The post, Telegram messages and publication history are retained.`,
-              )
+              ))
             )
               return;
             void action.run(async () => {
@@ -170,7 +172,7 @@ function ScheduleCard({
           }}
         >
           Delete schedule
-        </button>
+        </Button>
         <Link class="button" href={`/posts/${schedule.postId}/edit`}>
           Edit post
         </Link>
@@ -178,7 +180,7 @@ function ScheduleCard({
       <p class="footnote">
         Run Now works while paused and preserves the next recurring time.
       </p>
-    </article>
+    </wa-card>
   );
 }
 export function ScheduleEditorPage({ id }: { id?: string }) {
@@ -235,7 +237,6 @@ export function ScheduleEditorPage({ id }: { id?: string }) {
         </p>
       )}
       <form
-        class="card"
         onSubmit={(event) => {
           event.preventDefault();
           void action.run(async () => {
@@ -258,123 +259,131 @@ export function ScheduleEditorPage({ id }: { id?: string }) {
           });
         }}
       >
-        <label class="field">
-          Post
-          <select
-            required
-            value={postId}
-            onChange={(event) => setPostId(event.currentTarget.value)}
-          >
-            <option value="">Choose a post</option>
-            {postId &&
-              !posts.data?.items.some((post) => post.id === postId) && (
-                <option value={postId}>Current post (outside this page)</option>
-              )}
-            {posts.data?.items.map((post) => (
-              <option key={post.id} value={post.id}>
-                {postHeading(post)}
-              </option>
-            ))}
-          </select>
-        </label>
-        {posts.data && posts.data.total > posts.data.pageSize && (
-          <Pager
-            data={posts.data}
-            onPage={(page) => {
-              setPostPage(page);
-              setPostId("");
-            }}
-          />
-        )}
-        {id && (
-          <p>
-            The previous publication is deleted at its original destination on
-            the next run, even when the destination changes.
-          </p>
-        )}
-        <DestinationSelect
-          required={!id}
-          placeholder={
-            id && !assignedSource ? remote.data?.destination.name : undefined
-          }
-          sources={sources.data?.items || []}
-          value={sourceId || assignedSource?.id || ""}
-          onChange={setSourceId}
-        />
-        <label class="field">
-          Repeat
-          <select
-            value={frequency}
-            onChange={(event) =>
-              setFrequency(
-                event.currentTarget.value as CalendarSchedule["frequency"],
-              )
+        <wa-card class="card">
+          <div class="field">
+            <wa-select
+              label="Post"
+              required
+              value={postId}
+              onChange={(event) => setPostId(String(event.currentTarget.value))}
+            >
+              <wa-option value="">Choose a post</wa-option>
+              {postId &&
+                !posts.data?.items.some((post) => post.id === postId) && (
+                  <wa-option value={postId}>
+                    Current post (outside this page)
+                  </wa-option>
+                )}
+              {posts.data?.items.map((post) => (
+                <wa-option key={post.id} value={post.id}>
+                  {postHeading(post)}
+                </wa-option>
+              ))}
+            </wa-select>
+          </div>
+          {posts.data && posts.data.total > posts.data.pageSize && (
+            <Pager
+              data={posts.data}
+              onPage={(page) => {
+                setPostPage(page);
+                setPostId("");
+              }}
+            />
+          )}
+          {id && (
+            <p>
+              The previous publication is deleted at its original destination on
+              the next run, even when the destination changes.
+            </p>
+          )}
+          <DestinationSelect
+            required={!id}
+            placeholder={
+              id && !assignedSource ? remote.data?.destination.name : undefined
             }
-          >
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
-          </select>
-        </label>
-        <label class="field">
-          Time (UTC)
-          <input
-            type="time"
-            required
-            value={time}
-            onInput={(event) => setTime(event.currentTarget.value)}
+            sources={sources.data?.items || []}
+            value={sourceId || assignedSource?.id || ""}
+            onChange={setSourceId}
           />
-        </label>
-        {frequency === "weekly" && (
-          <label class="field">
-            Weekday
-            <select
-              value={weekday}
+          <div class="field">
+            <wa-select
+              label="Repeat"
+              value={frequency}
               onChange={(event) =>
-                setWeekday(Number(event.currentTarget.value))
+                setFrequency(
+                  event.currentTarget.value as CalendarSchedule["frequency"],
+                )
               }
             >
-              {weekdays.map((name, index) => (
-                <option value={index} key={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        {frequency === "monthly" && (
-          <label class="field">
-            Day of month
-            <input
-              type="number"
+              <wa-option value="daily">Daily</wa-option>
+              <wa-option value="weekly">Weekly</wa-option>
+              <wa-option value="monthly">Monthly</wa-option>
+            </wa-select>
+          </div>
+          <div class="field">
+            <wa-input
+              label="Time (UTC)"
+              type="time"
               required
-              min={1}
-              max={31}
-              value={day}
-              onInput={(event) => setDay(Number(event.currentTarget.value))}
-            />
-            <small>
-              Short months use their last day; later months retain this original
-              day.
-            </small>
-          </label>
-        )}
-        <div class="actions">
-          <button
-            class="primary"
-            disabled={
-              action.busy ||
-              !postId ||
-              (!id && !sourceId) ||
-              !!remote.data?.blockedRunId
-            }
-          >
-            {id ? "Save schedule" : "Create schedule"}
-          </button>
-          <Link class="button" href="/schedules">
-            Cancel
-          </Link>
-        </div>
+              value={time}
+              onInput={(event) => setTime(String(event.currentTarget.value))}
+            ></wa-input>
+          </div>
+          {frequency === "weekly" && (
+            <div class="field">
+              <wa-select
+                label="Weekday"
+                value={String(weekday)}
+                onChange={(event) =>
+                  setWeekday(Number(event.currentTarget.value))
+                }
+              >
+                {weekdays.map((name, index) => (
+                  <wa-option value={String(index)} key={name}>
+                    {name}
+                  </wa-option>
+                ))}
+              </wa-select>
+            </div>
+          )}
+          {frequency === "monthly" && (
+            <div class="field">
+              <wa-input
+                label="Day of month"
+                type="number"
+                required
+                min={1}
+                max={31}
+                value={String(day)}
+                onInput={(event) => setDay(Number(event.currentTarget.value))}
+              >
+                <small slot="hint">
+                  Short months use their last day; later months retain this
+                  original day.
+                </small>
+              </wa-input>
+            </div>
+          )}
+          <div class="actions">
+            <Button
+              variant="brand"
+              appearance="accent"
+              type="submit"
+              class="primary"
+              disabled={
+                action.busy ||
+                !postId ||
+                (!id && !sourceId) ||
+                !!remote.data?.blockedRunId
+              }
+            >
+              {id ? "Save schedule" : "Create schedule"}
+            </Button>
+            <Link class="button" href="/schedules">
+              Cancel
+            </Link>
+          </div>
+        </wa-card>
       </form>
     </>
   );

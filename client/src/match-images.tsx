@@ -1,4 +1,7 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import { Button } from "./web-awesome";
+import type WaButton from "@awesome.me/webawesome/dist/components/button/button.js";
+import { Dialog } from "./dialog";
+import { useEffect, useRef, useState } from "preact/hooks";
 import type { Match, MatchImage } from "@monitor/shared";
 import { useRemote } from "./api";
 import { ErrorNotice } from "./components";
@@ -92,7 +95,7 @@ function ImageThumbnail({
   const [attempt, setAttempt] = useState(0);
   return (
     <div class="match-image-thumbnail">
-      <button
+      <Button
         type="button"
         class="match-image-open"
         aria-label={`Open image ${index + 1}`}
@@ -113,9 +116,9 @@ function ImageThumbnail({
             onError={() => setFailed(true)}
           />
         )}
-      </button>
+      </Button>
       {failed && (
-        <button
+        <Button
           type="button"
           onClick={() => {
             setFailed(false);
@@ -123,7 +126,7 @@ function ImageThumbnail({
           }}
         >
           Retry preview {index + 1}
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -139,8 +142,7 @@ function ImageViewer({
   initialIndex: number;
   onClose: () => void;
 }) {
-  const dialog = useRef<HTMLDialogElement>(null);
-  const closeButton = useRef<HTMLButtonElement>(null);
+  const closeButton = useRef<WaButton>(null);
   const [index, setIndex] = useState(initialIndex);
   const [zoom, setZoom] = useState(1);
   const [attempt, setAttempt] = useState(0);
@@ -157,25 +159,12 @@ function ImageViewer({
     setAttempt(0);
     stage.current?.scrollTo(0, 0);
   };
-  useLayoutEffect(() => {
-    const element = dialog.current!;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    element.showModal();
-    return () => {
-      element.close();
-      document.body.style.overflow = previousOverflow;
-    };
-  }, []);
   return (
-    <dialog
-      ref={dialog}
+    <Dialog
       class="match-image-dialog"
       aria-label="Message image viewer"
       onClose={onClose}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) dialog.current?.close();
-      }}
+      closeOnBackdrop
       onKeyDown={(event) => {
         if (event.key === "ArrowLeft" && index > 0) {
           event.preventDefault();
@@ -191,49 +180,49 @@ function ImageViewer({
         <h2>
           Image {index + 1} of {images.length}
         </h2>
-        <button
+        <Button
           type="button"
-          ref={closeButton}
+          elementRef={closeButton}
           autoFocus
-          onClick={() => dialog.current?.close()}
+          onClick={onClose}
         >
           Close image
-        </button>
+        </Button>
       </div>
       <div class="actions" aria-label="Image controls">
         {images.length > 1 && (
           <>
-            <button
+            <Button
               type="button"
               disabled={index === 0}
               onClick={() => move(index - 1)}
             >
               Previous image
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               disabled={index === images.length - 1}
               onClick={() => move(index + 1)}
             >
               Next image
-            </button>
+            </Button>
           </>
         )}
-        <button
+        <Button
           type="button"
           disabled={zoom <= 1 || failed || loading}
           onClick={() => setZoom((value) => Math.max(1, value - 0.5))}
         >
           Zoom out
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           disabled={zoom >= 4 || failed || loading}
           onClick={() => setZoom((value) => Math.min(4, value + 0.5))}
         >
           Zoom in
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           disabled={zoom === 1}
           onClick={() => {
@@ -242,7 +231,7 @@ function ImageViewer({
           }}
         >
           Fit image
-        </button>
+        </Button>
         <span class="muted" role="status">
           {zoom === 1 ? "Fit to screen" : `${Math.round(zoom * 100)}%`}
         </span>
@@ -254,7 +243,7 @@ function ImageViewer({
             Unable to load this image. It may be deleted, inaccessible,
             unsupported, or larger than 10 MiB.
           </p>
-          <button
+          <Button
             type="button"
             onClick={() => {
               setFailed(false);
@@ -263,7 +252,7 @@ function ImageViewer({
             }}
           >
             Retry image
-          </button>
+          </Button>
         </div>
       )}
       <div
@@ -272,7 +261,7 @@ function ImageViewer({
         style={{ "--image-zoom": zoom }}
       >
         {!failed && (
-          <button
+          <Button
             type="button"
             class="match-image-zoom-target"
             aria-label={zoom === 1 ? "Zoom image" : "Fit image to screen"}
@@ -288,9 +277,9 @@ function ImageViewer({
                 setLoading(false);
               }}
             />
-          </button>
+          </Button>
         )}
       </div>
-    </dialog>
+    </Dialog>
   );
 }
