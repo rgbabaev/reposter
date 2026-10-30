@@ -1,4 +1,5 @@
-import type { ComponentChildren } from "preact";
+import { Button } from "./web-awesome";
+import type { ComponentChildren, HTMLAttributes } from "preact";
 import type { ConnectorStatus, NotificationJob, Page } from "@monitor/shared";
 import { utc } from "./api";
 export function navigate(path: string) {
@@ -15,23 +16,24 @@ export function Link({
   class?: string;
   "aria-current"?: "page";
 }) {
-  return (
-    <a
-      href={href}
-      {...props}
-      onClick={(event) => {
-        if (
-          !event.ctrlKey &&
-          !event.metaKey &&
-          !event.shiftKey &&
-          !event.altKey &&
-          event.button === 0
-        ) {
-          event.preventDefault();
-          navigate(href);
-        }
-      }}
-    >
+  const onClick: HTMLAttributes<HTMLElement>["onClick"] = (event) => {
+    if (
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.shiftKey &&
+      !event.altKey &&
+      event.button === 0
+    ) {
+      event.preventDefault();
+      navigate(href);
+    }
+  };
+  return props.class?.split(" ").includes("button") ? (
+    <Button href={href} {...props} onClick={onClick}>
+      {children}
+    </Button>
+  ) : (
+    <a href={href} {...props} onClick={onClick}>
       {children}
     </a>
   );
@@ -44,19 +46,20 @@ export function ErrorNotice({
   onRetry?: () => void;
 }) {
   return message ? (
-    <div class="notice error" role="alert">
+    <wa-callout variant="danger" class="notice error" role="alert">
       <p>{message}</p>
       {onRetry && (
-        <button type="button" onClick={onRetry}>
+        <Button type="button" onClick={onRetry}>
           Try again
-        </button>
+        </Button>
       )}
-    </div>
+    </wa-callout>
   ) : null;
 }
 export function Loading({ label = "Loading…" }: { label?: string }) {
   return (
     <p class="state" role="status">
+      <wa-spinner aria-hidden="true" />
       {label}
     </p>
   );
@@ -80,19 +83,19 @@ export function Status({ state }: { state?: ConnectorStatus["state"] }) {
     ? state.charAt(0).toUpperCase() + state.slice(1)
     : "Checking";
   return (
-    <span
-      class={
-        "badge " +
-        (state === "connected"
-          ? "good"
+    <wa-badge
+      variant={
+        state === "connected"
+          ? "success"
           : state === "disconnected"
-            ? "bad"
-            : "neutral")
+            ? "danger"
+            : "neutral"
       }
+      class="badge"
     >
-      <span class="dot" aria-hidden="true" />
+      <span slot="start" class="dot" aria-hidden="true" />
       {label}
-    </span>
+    </wa-badge>
   );
 }
 export function Pager({
@@ -105,23 +108,23 @@ export function Pager({
   const pages = Math.max(1, Math.ceil(data.total / data.pageSize));
   return (
     <nav class="pager" aria-label="Pagination">
-      <button
+      <Button
         type="button"
         disabled={data.page <= 1}
         onClick={() => onPage(data.page - 1)}
       >
         Previous
-      </button>
+      </Button>
       <span>
         Page {data.page} of {pages}
       </span>
-      <button
+      <Button
         type="button"
         disabled={data.page >= pages}
         onClick={() => onPage(data.page + 1)}
       >
         Next
-      </button>
+      </Button>
     </nav>
   );
 }
@@ -138,15 +141,15 @@ export function Delivery({
   const channel = job.channel === "telegram" ? "Telegram" : "Email";
   return (
     <div class="delivery">
-      <span
-        class={
-          "badge " +
-          (job.status === "sent"
-            ? "good"
+      <wa-badge
+        variant={
+          job.status === "sent"
+            ? "success"
             : job.status === "failed"
-              ? "bad"
-              : "neutral")
+              ? "danger"
+              : "neutral"
         }
+        class="badge"
       >
         {job.status === "sent"
           ? job.channel === "telegram"
@@ -155,7 +158,7 @@ export function Delivery({
           : job.status === "failed"
             ? `${channel} failed`
             : `${channel} pending`}
-      </span>
+      </wa-badge>
       <p class="muted">
         {job.attempts} {job.attempts === 1 ? "attempt" : "attempts"}
         {job.status === "sent"
@@ -173,9 +176,9 @@ export function Delivery({
         <p class="error-text">{job.lastError.replaceAll("_", " ")}</p>
       )}
       {job.status !== "sent" && onRetry && (
-        <button type="button" disabled={busy} onClick={onRetry}>
+        <Button type="button" disabled={busy} onClick={onRetry}>
           Retry {job.channel === "telegram" ? "Telegram" : "email"}
-        </button>
+        </Button>
       )}
     </div>
   );

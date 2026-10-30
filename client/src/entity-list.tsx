@@ -1,3 +1,5 @@
+import { confirmAction } from "./dialog";
+import { Button } from "./web-awesome";
 import type { Page } from "@monitor/shared";
 import type { ComponentChildren } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
@@ -57,9 +59,9 @@ function useBulkSelection<T extends Item>(
     if (!targets.length) return;
     if (
       action.confirm &&
-      !confirm(
+      !(await confirmAction(
         `${action.label} ${targets.length} selected items? ${action.confirm}`,
-      )
+      ))
     )
       return;
     running.current = true;
@@ -93,27 +95,27 @@ function useBulkSelection<T extends Item>(
   };
   const checkbox = (item: T, label = "item") =>
     selecting && (
-      <label class="check bulk-item-check">
-        <input
-          type="checkbox"
-          aria-label={`Select ${label}`}
-          checked={selected.includes(item.id)}
-          disabled={busy}
-          onChange={(event) =>
-            setSelected((ids) =>
-              event.currentTarget.checked
-                ? [...ids, item.id]
-                : ids.filter((id) => id !== item.id),
-            )
-          }
-        />
-      </label>
+      <wa-checkbox
+        class="check bulk-item-check"
+        aria-label={`Select ${label}`}
+        checked={selected.includes(item.id)}
+        disabled={busy}
+        onChange={(event) =>
+          setSelected((ids) =>
+            event.currentTarget.checked
+              ? [...ids, item.id]
+              : ids.filter((id) => id !== item.id),
+          )
+        }
+      >
+        <span class="visually-hidden">Select {label}</span>
+      </wa-checkbox>
     );
   return {
     toolbar: (
       <div class="bulk-selection">
         <div class={filters ? "actions list-filter-row" : "actions"}>
-          <button
+          <Button
             type="button"
             disabled={busy || (!selecting && !items?.length)}
             aria-pressed={selecting}
@@ -125,7 +127,7 @@ function useBulkSelection<T extends Item>(
             }}
           >
             {selecting ? "Cancel selection" : "Select"}
-          </button>
+          </Button>
           {filters}
           {selecting && (
             <div
@@ -133,7 +135,7 @@ function useBulkSelection<T extends Item>(
               role="group"
               aria-label="Selected item actions"
             >
-              <button
+              <Button
                 type="button"
                 disabled={busy || !items?.length}
                 onClick={() =>
@@ -141,28 +143,28 @@ function useBulkSelection<T extends Item>(
                 }
               >
                 Select page
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 disabled={busy || !selected.length}
                 onClick={() => setSelected([])}
               >
                 Clear selection
-              </button>
+              </Button>
               <span role="status">{selected.length} selected on this page</span>
               {actions.map((action) => {
                 const count = chosen.filter(
                   (item) => !action.eligible || action.eligible(item),
                 ).length;
                 return (
-                  <button
+                  <Button
                     key={action.label}
                     type="button"
                     disabled={busy || !count}
                     onClick={() => void execute(action)}
                   >
                     {action.label} ({count})
-                  </button>
+                  </Button>
                 );
               })}
             </div>

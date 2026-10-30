@@ -77,3 +77,13 @@ Record outcomes in `manual-checks.md`. SMTP acceptance does not establish inbox 
 - Delete accepted Telegram delivery history, then recover monitored report-chat messages. Confirm those reports still cannot match rules or create notification loops.
 
 After the entity-list extraction, spot-check Sources, Rules, Posts, Schedules, Matches and both Activity views: normal card actions work; Select preserves layout and makes every tile click toggle selection; completing a bulk action exits selection. Check empty lists, retry after a connection error and pagination after deleting the final page. Filters and view controls are not part of this change.
+
+## Web Awesome migration (task 29)
+
+Local checks on 2026-10-30 use disposable databases and a simulated connector; no Telegram or SMTP messages are sent.
+
+- TypeScript and production builds pass with pinned Web Awesome 3.14.0, locally bundled assets and no React compatibility imports.
+- Chromium/WebKit cover login validation and Enter submission; rule selects, checkboxes and save/reopen; rich text selection, bold, links and save/reopen; native upload and persisted image reordering; monthly schedule validation; notification switch persistence and failed-save rollback.
+- List checks cover loading/error/retry, tile selection, bulk actions, partial failure and pagination. Dialog checks cover confirmation accept/cancel, Escape, autofocus/focus restoration, filtering, image zoom/navigation and unavailable-image retry. Layouts pass at 320/390/900px.
+- Browser checks use only same-origin assets and APIs. CSP permits bundled icon `data:` fetches while retaining the existing script/style restrictions.
+- Rebuild and restart to serve the new assets and CSP header. No database upgrade is required. Spot-check physical-phone selection, dropdowns, uploads and dialogs; device acceptance remains pending.

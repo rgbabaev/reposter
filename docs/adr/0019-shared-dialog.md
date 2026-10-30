@@ -1,5 +1,7 @@
 # 0019. Shared modal dialog
 
+Superseded in part by [ADR 0020](0020-web-awesome-components.md): shared dialog ownership remains, using Web Awesome.
+
 ## Context
 
 Match filters and enlarged image previews duplicate native dialog lifecycle and page scroll locking.

@@ -1,3 +1,4 @@
+import { Button } from "./web-awesome";
 import { render } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import type { ConnectorStatus } from "@monitor/shared";
@@ -35,38 +36,48 @@ function Login({ onLogin }: { onLogin: () => void }) {
         <span>Personal Monitor</span>
       </header>
       <main class="login-card">
-        <h1>Welcome back</h1>
-        <p>Sign in to your monitoring workspace.</p>
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            void action.run(async () => {
-              await api("/login", { method: "POST", body: { password } });
-              setPassword("");
-              onLogin();
-            });
-          }}
-        >
-          <ErrorNotice message={action.error} />
-          <label class="field">
-            Access password
-            <input
-              type="password"
-              value={password}
-              onInput={(event) => setPassword(event.currentTarget.value)}
-              required
-              maxLength={1024}
-              autoComplete="current-password"
-              autoFocus
-            />
-          </label>
-          <button type="submit" class="primary" disabled={action.busy}>
-            {action.busy ? "Signing in…" : "Sign in"}
-          </button>
-        </form>
-        <p class="footnote">
-          Your session lasts seven days. You can sign out in Settings.
-        </p>
+        <wa-card class="login-panel">
+          <h1>Welcome back</h1>
+          <p>Sign in to your monitoring workspace.</p>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              void action.run(async () => {
+                await api("/login", { method: "POST", body: { password } });
+                setPassword("");
+                onLogin();
+              });
+            }}
+          >
+            <ErrorNotice message={action.error} />
+            <div class="field">
+              <wa-input
+                label="Access password"
+                type="password"
+                value={password}
+                onInput={(event) =>
+                  setPassword(event.currentTarget.value ?? "")
+                }
+                required
+                maxlength={1024}
+                autocomplete="current-password"
+                autoFocus
+              ></wa-input>
+            </div>
+            <Button
+              variant="brand"
+              appearance="accent"
+              type="submit"
+              class="primary"
+              disabled={action.busy}
+            >
+              {action.busy ? "Signing in…" : "Sign in"}
+            </Button>
+          </form>
+          <p class="footnote">
+            Your session lasts seven days. You can sign out in Settings.
+          </p>
+        </wa-card>
       </main>
     </div>
   );
@@ -159,21 +170,21 @@ function Workspace({ onLogout }: { onLogout: () => void }) {
       </header>
       <main id="main" class="workspace" key={path} tabIndex={-1}>
         {connector.error ? (
-          <div class="notice warning" role="status">
+          <wa-callout variant="warning" class="notice warning" role="status">
             <p>Cannot reach the server. Your latest data may be out of date.</p>
-            <button type="button" onClick={connector.refresh}>
+            <Button type="button" onClick={connector.refresh}>
               Reconnect
-            </button>
-          </div>
+            </Button>
+          </wa-callout>
         ) : (
           connector.data?.state !== "connected" &&
           connector.data && (
-            <div class="notice warning" role="status">
+            <wa-callout variant="warning" class="notice warning" role="status">
               <p>
                 Telegram is {connector.data.state}.{" "}
                 <Link href="/connectors">View connection</Link>
               </p>
-            </div>
+            </wa-callout>
           )
         )}
         {page}
@@ -231,18 +242,22 @@ function App() {
   if (error)
     return (
       <main class="login-card">
-        <h1>Personal Monitor</h1>
-        <ErrorNotice
-          message={error}
-          onRetry={() => setAttempt((value) => value + 1)}
-        />
+        <wa-card class="login-panel">
+          <h1>Personal Monitor</h1>
+          <ErrorNotice
+            message={error}
+            onRetry={() => setAttempt((value) => value + 1)}
+          />
+        </wa-card>
       </main>
     );
   if (session === undefined)
     return (
       <main class="login-card">
-        <h1>Personal Monitor</h1>
-        <Loading label="Opening your workspace…" />
+        <wa-card class="login-panel">
+          <h1>Personal Monitor</h1>
+          <Loading label="Opening your workspace…" />
+        </wa-card>
       </main>
     );
   return session ? (

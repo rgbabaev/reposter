@@ -7,6 +7,7 @@
     "build": "tsc -p . && vite build"
   },
   "dependencies": {
+    "@awesome.me/webawesome": "3.14.0",
     "@monitor/shared": "1.0.0",
     "preact": "11.0.2"
   },
