@@ -4,7 +4,7 @@ import { showToast } from "./toast";
 import { EntityList, usePageClamp, type BulkAction } from "./entity-list";
 import { MatchImageGallery } from "./match-images";
 import { ruleHeading } from "@monitor/shared";
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import type {
   Activity,
   AttachmentType,
@@ -132,6 +132,10 @@ export function SourcesPage() {
   const [page, setPage] = useState(1);
   const [discoveryPage, setDiscoveryPage] = useState(1);
   const [showDiscovery, setShowDiscovery] = useState(false);
+  const listRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (showDiscovery) listRef.current?.scrollIntoView({ block: "start" });
+  }, [showDiscovery]);
   const selected = useRemote<Page<Source>>(`/sources?page=${page}`);
   const discovered = useRemote<Page<DiscoveredSource>>(
     showDiscovery ? `/discovery?page=${discoveryPage}` : null,
@@ -177,90 +181,9 @@ export function SourcesPage() {
       <PageHeading
         title="Sources"
         description="Choose the Telegram chats and topics you want to monitor."
-        action={
-          <Button
-            variant="brand"
-            appearance="accent"
-            type="button"
-            class="primary"
-            onClick={() => setShowDiscovery(!showDiscovery)}
-          >
-            {showDiscovery ? "Close discovery" : "Add sources"}
-          </Button>
-        }
       />
       <ErrorDialog message={action.error} onClose={action.clear} />
-      {showDiscovery && (
-        <wa-card
-          role="region"
-          class="card discovery"
-          aria-labelledby="discovery-title"
-        >
-          <div class="section-heading">
-            <h2 id="discovery-title">Accessible sources</h2>
-            <Button type="button" disabled={action.busy} onClick={refresh}>
-              {action.busy ? "Working…" : "Refresh list"}
-            </Button>
-          </div>
-          <p class="muted">
-            Refresh to discover groups, channels, private chats, and forum
-            topics.
-          </p>
-          <ErrorNotice
-            message={discovered.error}
-            onRetry={discovered.refresh}
-          />
-          {discovered.loading ? (
-            <Loading />
-          ) : discovered.data?.items.length ? (
-            <>
-              <ul class="source-picker">
-                {discovered.data.items.map((source) => {
-                  const added = all.data?.items.some(
-                    (s) =>
-                      s.externalId === source.externalId &&
-                      (s.topicId || "") === (source.topicId || ""),
-                  );
-                  return (
-                    <li key={source.externalId + ":" + (source.topicId || "")}>
-                      <div>
-                        <strong>{source.name}</strong>
-                        <span class="muted">
-                          {source.kind === "topic"
-                            ? "Forum topic"
-                            : source.kind.charAt(0).toUpperCase() +
-                              source.kind.slice(1)}
-                        </span>
-                      </div>
-                      <Button
-                        type="button"
-                        disabled={action.busy || added}
-                        onClick={() => select(source)}
-                        aria-label={
-                          added
-                            ? `${source.name} selected`
-                            : `Monitor ${source.name}`
-                        }
-                      >
-                        {added ? "Selected" : "Monitor"}
-                      </Button>
-                    </li>
-                  );
-                })}
-              </ul>
-              <Pager data={discovered.data} onPage={setDiscoveryPage} />
-            </>
-          ) : (
-            discovered.data && (
-              <Empty title="No sources listed">
-                Use Refresh list after connecting Telegram.
-              </Empty>
-            )
-          )}
-        </wa-card>
-      )}
-      <section aria-labelledby="selected-title">
-        <h2 id="selected-title">Monitored sources</h2>
+      <section ref={listRef} aria-label="Sources list">
         <EntityList
           data={selected.data}
           loading={selected.loading}
@@ -269,6 +192,90 @@ export function SourcesPage() {
           onPage={setPage}
           scope={page}
           actions={bulkActions}
+          primaryAction={
+            <Button
+              variant="brand"
+              appearance="accent"
+              type="button"
+              class="primary"
+              onClick={() => setShowDiscovery(!showDiscovery)}
+            >
+              {showDiscovery ? "Close discovery" : "Add sources"}
+            </Button>
+          }
+          header={
+            showDiscovery && (
+              <wa-card
+                role="region"
+                class="card discovery"
+                aria-labelledby="discovery-title"
+              >
+                <div class="section-heading">
+                  <h2 id="discovery-title">Accessible sources</h2>
+                  <Button type="button" disabled={action.busy} onClick={refresh}>
+                    {action.busy ? "Working…" : "Refresh list"}
+                  </Button>
+                </div>
+                <p class="muted">
+                  Refresh to discover groups, channels, private chats, and forum
+                  topics.
+                </p>
+                <ErrorNotice
+                  message={discovered.error}
+                  onRetry={discovered.refresh}
+                />
+                {discovered.loading ? (
+                  <Loading />
+                ) : discovered.data?.items.length ? (
+                  <>
+                    <ul class="source-picker">
+                      {discovered.data.items.map((source) => {
+                        const added = all.data?.items.some(
+                          (s) =>
+                            s.externalId === source.externalId &&
+                            (s.topicId || "") === (source.topicId || ""),
+                        );
+                        return (
+                          <li
+                            key={source.externalId + ":" + (source.topicId || "")}
+                          >
+                            <div>
+                              <strong>{source.name}</strong>
+                              <span class="muted">
+                                {source.kind === "topic"
+                                  ? "Forum topic"
+                                  : source.kind.charAt(0).toUpperCase() +
+                                    source.kind.slice(1)}
+                              </span>
+                            </div>
+                            <Button
+                              type="button"
+                              disabled={action.busy || added}
+                              onClick={() => select(source)}
+                              aria-label={
+                                added
+                                  ? `${source.name} selected`
+                                  : `Monitor ${source.name}`
+                              }
+                            >
+                              {added ? "Selected" : "Monitor"}
+                            </Button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    <Pager data={discovered.data} onPage={setDiscoveryPage} />
+                  </>
+                ) : (
+                  discovered.data && (
+                    <Empty title="No sources listed">
+                      Use Refresh list after connecting Telegram.
+                    </Empty>
+                  )
+                )}
+              </wa-card>
+            )
+          }
           itemLabel={(source) => source.name}
           renderItem={(source) => (
             <wa-card role="article" class="card">
@@ -392,11 +399,6 @@ export function RulesPage() {
       <PageHeading
         title="Rules"
         description="Rules are shared across their assigned sources. Edits and disabling apply everywhere. All text conditions must match."
-        action={
-          <Link href="/rules/new" class="button primary">
-            Add rule
-          </Link>
-        }
       />
       <ErrorDialog message={action.error} onClose={action.clear} />
       <ErrorNotice message={sources.error} onRetry={sources.refresh} />
@@ -408,6 +410,11 @@ export function RulesPage() {
         onPage={setPage}
         scope={page}
         actions={bulkActions}
+        primaryAction={
+          <Link href="/rules/new" class="button primary">
+            Add rule
+          </Link>
+        }
         itemLabel={ruleHeading}
         renderItem={(rule) => (
           <wa-card role="article" class="card">

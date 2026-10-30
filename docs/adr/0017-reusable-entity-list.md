@@ -8,6 +8,8 @@ Entity pages share selection behavior but duplicate list states and pagination. 
 
 Use a generic `EntityList` component for selection, bulk actions, loading, errors, empty states, pagination and page clamping. Pages provide paginated data, refresh/page callbacks, selection scope, action definitions, accessible item labels, card rendering and empty-state text. Keep fetching and domain operations in pages. Use the same item wrapper for every entity.
 
+Pages can provide a primary action in the sticky toolbar and header content beneath it. Sources uses the header for discovery; creation links and discovery behavior remain page-owned.
+
 Filters and list/tile settings remain future work; add their per-use configuration to this component when implemented.
 
 ## Consequences

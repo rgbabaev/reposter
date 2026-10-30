@@ -279,3 +279,13 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 - [x] Use the bundled Web Awesome toast for individual deletion confirmations and bulk action summaries, replacing inline result text.
 - [x] Share one stack across navigation; auto-dismiss success after five seconds, retain partial/failed summaries until dismissed and preserve error dialogs for failure details.
 - Check: type/build checks and disposable Chromium/WebKit checks cover deletion, bulk counts, dismissal, navigation and mobile placement.
+
+### 38. Keep creation controls in list toolbars
+
+- [x] Move Sources, Rules, Posts and Schedules creation controls into the shared sticky list toolbar. Show source discovery beneath its controls and bring it into view when opened.
+- Check: type/build checks and disposable Chromium/WebKit checks cover scrolling, selection, creation navigation, discovery and empty lists at 320/390/900px.
+
+### 39. Simplify page headings
+
+- [x] Remove the Sources list subheading and the shared divider beneath page headings. Reduce spacing below page descriptions.
+- Check: client type/build checks and Chromium/WebKit verify heading spacing, source discovery and sticky controls at 320/390/900px.

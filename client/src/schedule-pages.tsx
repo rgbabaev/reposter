@@ -64,11 +64,6 @@ export function SchedulesPage() {
       <PageHeading
         title="Schedules"
         description="Recurring publication and replacement in UTC."
-        action={
-          <Link class="button primary" href="/schedules/new">
-            New schedule
-          </Link>
-        }
       />
       <EntityList
         data={remote.data}
@@ -78,6 +73,11 @@ export function SchedulesPage() {
         onPage={setPage}
         scope={page}
         actions={bulkActions}
+        primaryAction={
+          <Link class="button primary" href="/schedules/new">
+            New schedule
+          </Link>
+        }
         itemLabel={(schedule) => scheduleHeading(schedule)}
         renderItem={(schedule) => (
           <ScheduleCard schedule={schedule} refresh={remote.refresh} />

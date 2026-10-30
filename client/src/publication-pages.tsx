@@ -41,11 +41,6 @@ export function PostsPage() {
       <PageHeading
         title="Posts"
         description="Reusable content. Choose destinations and publishing times in Schedules."
-        action={
-          <Link class="button primary" href="/posts/new">
-            New post
-          </Link>
-        }
       />
       <EntityList
         data={remote.data}
@@ -55,6 +50,11 @@ export function PostsPage() {
         onPage={setPage}
         scope={page}
         actions={bulkActions}
+        primaryAction={
+          <Link class="button primary" href="/posts/new">
+            New post
+          </Link>
+        }
         itemLabel={(post) => postHeading(post)}
         renderItem={(post) => <PostCard post={post} refresh={remote.refresh} />}
         emptyTitle="No posts yet"

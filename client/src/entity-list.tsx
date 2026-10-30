@@ -32,6 +32,7 @@ function useBulkSelection<T extends Item>(
   refresh: () => void,
   actions: BulkAction<T>[],
   filters?: ComponentChildren,
+  primaryAction?: ComponentChildren,
 ) {
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -119,6 +120,7 @@ function useBulkSelection<T extends Item>(
     toolbar: (
       <div class="bulk-selection">
         <div class={filters ? "actions list-filter-row" : "actions"}>
+          {primaryAction}
           <Button
             type="button"
             disabled={busy || (!selecting && !items?.length)}
@@ -202,6 +204,8 @@ export interface EntityListProps<T extends Item> {
   itemLabel: (item: T) => string;
   renderItem: (item: T) => ComponentChildren;
   filters?: ComponentChildren;
+  primaryAction?: ComponentChildren;
+  header?: ComponentChildren;
   emptyTitle: string;
   emptyDescription?: ComponentChildren;
 }
@@ -217,14 +221,24 @@ export function EntityList<T extends Item>({
   itemLabel,
   renderItem,
   filters,
+  primaryAction,
+  header,
   emptyTitle,
   emptyDescription,
 }: EntityListProps<T>) {
-  const bulk = useBulkSelection(data?.items, scope, refresh, actions, filters);
+  const bulk = useBulkSelection(
+    data?.items,
+    scope,
+    refresh,
+    actions,
+    filters,
+    primaryAction,
+  );
   usePageClamp(data, onPage);
   return (
     <>
       {bulk.toolbar}
+      {header}
       <ErrorNotice message={error} onRetry={refresh} />
       {loading ? (
         <Loading />
