@@ -114,3 +114,7 @@ Type checks and production build pass. Disposable Chromium/WebKit checks cover r
 - Build/type checks and all 20 backend tests pass. Coverage includes two six-hour schedules driven by timers, successful Run Now/retry, slow completion, upgrade correction, pause/restart, deleted history and preserved calendar times.
 - Chromium/WebKit pass interval creation/editing/reopening, validation, calendar conversion and 320/390/900px layouts. A read-only migration preview corrects the operator's two schedules from approximately 22:23 to 17:46 UTC on 2026-10-30, six hours after their successful publications.
 - Restart to apply migration 012. Overdue schedules run once after reconnecting. No live publications or operational database changes were made during verification.
+
+## Action result toasts (task 37)
+
+Local checks on 2026-10-30 pass TypeScript and production builds. Disposable Chromium/WebKit checks cover all five individual deletion confirmations, cancellation/failed deletion without success messages, bulk success/partial/total failure counts, selection exit, navigation persistence, automatic/manual dismissal and 320/390/900px placement with 44px close targets. The shared Web Awesome stack replaces inline bulk result text; existing error dialogs retain failure details. No live Telegram or SMTP actions were performed.

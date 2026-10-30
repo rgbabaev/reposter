@@ -273,3 +273,9 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 
 - [x] Make the shared Select and Filter toolbar sticky at the viewport top with an opaque surface and subtle divider.
 - Check: type/build checks and Chromium/WebKit scrolling, selection and filtering at phone and desktop widths.
+
+### 37. Add action result toasts
+
+- [x] Use the bundled Web Awesome toast for individual deletion confirmations and bulk action summaries, replacing inline result text.
+- [x] Share one stack across navigation; auto-dismiss success after five seconds, retain partial/failed summaries until dismissed and preserve error dialogs for failure details.
+- Check: type/build checks and disposable Chromium/WebKit checks cover deletion, bulk counts, dismissal, navigation and mobile placement.

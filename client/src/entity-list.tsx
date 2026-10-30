@@ -1,4 +1,5 @@
 import { confirmAction, ErrorDialog } from "./dialog";
+import { showToast } from "./toast";
 import { Button } from "./web-awesome";
 import type { Page } from "@monitor/shared";
 import type { ComponentChildren } from "preact";
@@ -81,10 +82,13 @@ function useBulkSelection<T extends Item>(
           );
         }
       }
-      setResult(
-        `${action.label}: ${completed.length} completed${failures.length ? `, ${failures.length} failed` : ""}.`,
-      );
+      const summary = `${action.label}: ${completed.length} completed${failures.length ? `, ${failures.length} failed` : ""}.`;
+      setResult(summary);
       setError([...new Set(failures)].join(" "));
+      void showToast(
+        summary,
+        failures.length ? (completed.length ? "warning" : "danger") : "success",
+      );
       refresh();
     } finally {
       setSelected([]);
@@ -171,7 +175,6 @@ function useBulkSelection<T extends Item>(
           )}
         </div>
         {busy && <p role="status">Applying selected action…</p>}
-        {result && <p role="status">{result}</p>}
         <ErrorDialog
           message={error}
           summary={result}

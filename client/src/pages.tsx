@@ -1,5 +1,6 @@
 import { Button } from "./web-awesome";
 import { Dialog, confirmAction, ErrorDialog } from "./dialog";
+import { showToast } from "./toast";
 import { EntityList, usePageClamp, type BulkAction } from "./entity-list";
 import { MatchImageGallery } from "./match-images";
 import { ruleHeading } from "@monitor/shared";
@@ -336,6 +337,7 @@ export function SourcesPage() {
                         await api("/sources/" + source.id, {
                           method: "DELETE",
                         });
+                        void showToast("Source removed.");
                         refreshSelected();
                       });
                   }}
@@ -477,6 +479,7 @@ export function RulesPage() {
                   )
                     void action.run(async () => {
                       await api("/rules/" + rule.id, { method: "DELETE" });
+                      void showToast("Rule deleted.");
                       remote.refresh();
                     });
                 }}
@@ -1069,6 +1072,7 @@ export function MatchDetail({ id }: { id: string }) {
                   )
                     void action.run(async () => {
                       await api("/matches/" + id, { method: "DELETE" });
+                      void showToast("Stored match deleted.");
                       navigate("/matches");
                     });
                 }}

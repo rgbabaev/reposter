@@ -1,4 +1,5 @@
 import { confirmAction, ErrorDialog } from "./dialog";
+import { showToast } from "./toast";
 import { Button } from "./web-awesome";
 import { EntityList, type BulkAction } from "./entity-list";
 import { postHeading, scheduleHeading } from "@monitor/shared";
@@ -166,6 +167,7 @@ function ScheduleCard({
               return;
             void action.run(async () => {
               await api(`/schedules/${schedule.id}`, { method: "DELETE" });
+              void showToast("Schedule deleted.");
               refresh();
             });
           }}

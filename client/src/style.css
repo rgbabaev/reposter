@@ -53,6 +53,18 @@ wa-switch::part(base) {
   min-height: 44px;
   align-items: center;
 }
+wa-toast {
+  --width: min(28rem, 100vw);
+  padding-block-start: max(var(--wa-space-s), env(safe-area-inset-top, 0px));
+}
+wa-toast-item::part(content) {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+wa-toast-item::part(close-button) {
+  min-width: 44px;
+  min-height: 44px;
+}
 a {
   color: var(--accent);
   text-underline-offset: 3px;

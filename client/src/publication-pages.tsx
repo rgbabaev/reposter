@@ -1,4 +1,5 @@
 import { confirmAction, ErrorDialog } from "./dialog";
+import { showToast } from "./toast";
 import { Button } from "./web-awesome";
 import { EntityList, type BulkAction } from "./entity-list";
 import { PostTextEditor } from "./post-text-editor";
@@ -94,6 +95,7 @@ function PostCard({ post, refresh }: { post: Post; refresh: () => void }) {
             )
               void action.run(async () => {
                 await api(`/posts/${post.id}`, { method: "DELETE" });
+                void showToast("Post deleted.");
                 refresh();
               });
           }}
