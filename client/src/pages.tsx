@@ -1,5 +1,5 @@
 import { Button } from "./web-awesome";
-import { Dialog, confirmAction } from "./dialog";
+import { Dialog, confirmAction, ErrorDialog } from "./dialog";
 import { EntityList, usePageClamp, type BulkAction } from "./entity-list";
 import { MatchImageGallery } from "./match-images";
 import { ruleHeading } from "@monitor/shared";
@@ -188,7 +188,7 @@ export function SourcesPage() {
           </Button>
         }
       />
-      <ErrorNotice message={action.error} />
+      <ErrorDialog message={action.error} onClose={action.clear} />
       {showDiscovery && (
         <wa-card
           role="region"
@@ -396,10 +396,8 @@ export function RulesPage() {
           </Link>
         }
       />
-      <ErrorNotice
-        message={action.error || sources.error}
-        onRetry={sources.error ? sources.refresh : undefined}
-      />
+      <ErrorDialog message={action.error} onClose={action.clear} />
+      <ErrorNotice message={sources.error} onRetry={sources.refresh} />
       <EntityList
         data={remote.data}
         loading={remote.loading}
@@ -592,7 +590,7 @@ function RuleForm({ initial, sources }: { initial?: Rule; sources: Source[] }) {
       }}
     >
       <wa-card class="card">
-        <ErrorNotice message={action.error} />
+        <ErrorDialog message={action.error} onClose={action.clear} />
         <fieldset>
           <legend>Sources ({draft.sourceIds.length} selected)</legend>
           <p>
@@ -950,10 +948,8 @@ export function MatchDetail({ id }: { id: string }) {
         ‹ Matched Messages
       </Link>
       <PageHeading title="Match details" />
-      <ErrorNotice
-        message={action.error || remote.error}
-        onRetry={remote.error ? remote.refresh : undefined}
-      />
+      <ErrorDialog message={action.error} onClose={action.clear} />
+      <ErrorNotice message={remote.error} onRetry={remote.refresh} />
       {remote.loading ? (
         <Loading />
       ) : (
@@ -1233,7 +1229,7 @@ export function ActivityPage() {
           Notification delivery
         </Button>
       </div>
-      <ErrorNotice message={action.error} />
+      <ErrorDialog message={action.error} onClose={action.clear} />
       {view === "events" ? (
         <EntityList
           key="events"
@@ -1369,10 +1365,8 @@ export function SettingsPage({ onLogout }: { onLogout: () => void }) {
         title="Settings"
         description="Connection and access configuration."
       />
-      <ErrorNotice
-        message={action.error || remote.error}
-        onRetry={remote.error ? remote.refresh : undefined}
-      />
+      <ErrorDialog message={action.error} onClose={action.clear} />
+      <ErrorNotice message={remote.error} onRetry={remote.refresh} />
       {remote.loading ? (
         <Loading />
       ) : (

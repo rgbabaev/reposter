@@ -65,6 +65,29 @@ export function Dialog({
   );
 }
 
+export function ErrorDialog({
+  message,
+  summary,
+  onClose,
+}: {
+  message?: string;
+  summary?: string;
+  onClose: () => void;
+}) {
+  return message ? (
+    <Dialog aria-label="Action failed" onClose={onClose}>
+      <h2>Action failed</h2>
+      {summary && <p>{summary}</p>}
+      <p role="alert">{message}</p>
+      <div class="actions">
+        <Button type="button" autoFocus onClick={onClose}>
+          Close
+        </Button>
+      </div>
+    </Dialog>
+  ) : null;
+}
+
 let pendingConfirmation: Promise<boolean> | undefined;
 
 export function confirmAction(message: string): Promise<boolean> {

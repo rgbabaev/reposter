@@ -1,4 +1,4 @@
-import { confirmAction } from "./dialog";
+import { confirmAction, ErrorDialog } from "./dialog";
 import { Button } from "./web-awesome";
 import { EntityList, type BulkAction } from "./entity-list";
 import { PostTextEditor } from "./post-text-editor";
@@ -75,7 +75,7 @@ function PostCard({ post, refresh }: { post: Post; refresh: () => void }) {
       <p class="post-text">{post.text}</p>
       <ImageStrip images={post.images} />
       <p class="muted">Updated {utc(post.updatedAt)}</p>
-      <ErrorNotice message={action.error} />
+      <ErrorDialog message={action.error} onClose={action.clear} />
       <div class="actions">
         <Link
           class="button"
@@ -195,7 +195,7 @@ export function PostEditorPage({ id }: { id?: string }) {
         </p>
       )}
       <ErrorNotice message={remote.error} onRetry={remote.refresh} />
-      <ErrorNotice message={action.error} />
+      <ErrorDialog message={action.error} onClose={action.clear} />
       {remote.loading ? (
         <Loading />
       ) : (
@@ -412,7 +412,7 @@ function RunCard({
           <small>Error: {run.error}</small>
         </p>
       )}
-      <ErrorNotice message={action.error} />
+      <ErrorDialog message={action.error} onClose={action.clear} />
       {run.status === "failed" && (
         <Button
           type="button"

@@ -1,4 +1,4 @@
-import { confirmAction } from "./dialog";
+import { confirmAction, ErrorDialog } from "./dialog";
 import { Button } from "./web-awesome";
 import type { Page } from "@monitor/shared";
 import type { ComponentChildren } from "preact";
@@ -172,7 +172,11 @@ function useBulkSelection<T extends Item>(
         </div>
         {busy && <p role="status">Applying selected action…</p>}
         {result && <p role="status">{result}</p>}
-        <ErrorNotice message={error} />
+        <ErrorDialog
+          message={error}
+          summary={result}
+          onClose={() => setError("")}
+        />
       </div>
     ),
     row: (item: T, children: ComponentChildren, label?: string) => (

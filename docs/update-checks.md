@@ -99,3 +99,7 @@ Local checks on 2026-10-30 use disposable databases and a simulated connector; n
 - Type/build checks and six regressions pass: interval validation, UTC boundaries, calendar compatibility, restart/pause/Run Now, replacement, editing restrictions and slow-run cadence. Run `npm run build && node --test server/tests/hourly-schedules.test.mjs`.
 - Chromium/WebKit pass creation, editing/reopening, unchanged next time on unchanged recurrence, invalid/empty intervals, singular headings and switching back to daily. Layouts pass at 320/390/900px without page errors or horizontal overflow.
 - No migration is required. Live Telegram interval timing and physical-phone checks remain pending.
+
+## Action error dialogs (task 32)
+
+Type checks and production build pass. Disposable Chromium/WebKit checks cover referenced-post deletion, Close/Escape dismissal, Close autofocus, scroll cleanup, 320/390px dialogs, mixed bulk deletion counts and failure details, preserved drafts after failed saves, successful retry and inline loading errors. No live Telegram or SMTP messages were sent.

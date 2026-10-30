@@ -1,4 +1,4 @@
-import { confirmAction } from "./dialog";
+import { confirmAction, ErrorDialog } from "./dialog";
 import { Button } from "./web-awesome";
 import { EntityList, type BulkAction } from "./entity-list";
 import { postHeading, scheduleHeading } from "@monitor/shared";
@@ -123,7 +123,7 @@ function ScheduleCard({
           starting another.
         </p>
       )}
-      <ErrorNotice message={action.error} />
+      <ErrorDialog message={action.error} onClose={action.clear} />
       <div class="actions">
         <Button
           type="button"
@@ -230,9 +230,8 @@ export function ScheduleEditorPage({ id }: { id?: string }) {
         title={id ? "Edit schedule" : "New schedule"}
         description="One reusable post and one group or forum topic."
       />
-      <ErrorNotice
-        message={action.error || remote.error || posts.error || sources.error}
-      />
+      <ErrorDialog message={action.error} onClose={action.clear} />
+      <ErrorNotice message={remote.error || posts.error || sources.error} />
       {(posts.loading || sources.loading) && <Loading />}
       {remote.data?.blockedRunId && (
         <p>

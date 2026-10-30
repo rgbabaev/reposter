@@ -1,3 +1,4 @@
+import { ErrorDialog } from "./dialog";
 import { Button } from "./web-awesome";
 import { render } from "preact";
 import { useEffect, useState } from "preact/hooks";
@@ -49,7 +50,7 @@ function Login({ onLogin }: { onLogin: () => void }) {
               });
             }}
           >
-            <ErrorNotice message={action.error} />
+            <ErrorDialog message={action.error} onClose={action.clear} />
             <div class="field">
               <wa-input
                 label="Access password"

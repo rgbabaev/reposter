@@ -245,3 +245,9 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 - [x] Add configurable 1–24 whole-hour intervals to schedule creation, editing, validation and headings.
 - [x] Preserve interval cadence through midnight, restart, downtime, slow runs and Run Now; retain pause and unfinished-run restrictions.
 - Check: type/build checks, recurrence and storage regressions, and browser creation/editing checks. Results: [update-checks.md](update-checks.md).
+
+### 32. Show action failures in dialogs
+
+- [x] Use a shared dismissible dialog for single and bulk action failures, including deletion restrictions, saves and retries.
+- [x] Preserve bulk result counts, form values and inline loading/retry states.
+- Check: type/build checks and Chromium/WebKit cover deletion failures, Close/Escape, autofocus, scroll cleanup, bulk partial results, failed-save recovery and 320/390px layouts. Results: [update-checks.md](update-checks.md).
