@@ -28,7 +28,7 @@ For LAN HTTP access, set `bind` to `0.0.0.0` and `publicOrigin` to the server’
 
 Open the configured `publicOrigin`, sign in, refresh sources, and add rules.
 
-Use **More → Posts** to create text/image posts and publish now. Use **More → Schedules** for recurring UTC publication. Review interrupted or uncertain sends in **Posts → Publication history** before retrying.
+Use **More → Posts** to create text/image posts and publish now. Use **More → Schedules** for recurring UTC publication. Review interrupted or uncertain sends in **More → Publication history** before retrying.
 
 ## Configuration
 

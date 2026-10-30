@@ -263,3 +263,8 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 - [x] Persist each schedule's last successful publication independently of history; use it for interval changes, Run Now, retries and subsequent runs.
 - [x] Backfill and correct existing hourly due times without resuming paused schedules or bypassing unfinished runs; retain calendar recurrence.
 - Check: build/type checks and regression coverage for two six-hour schedules, timers, restart, upgrade, slow runs, retries and deleted history. Results: [update-checks.md](update-checks.md).
+
+### 35. Move publication history navigation
+
+- [x] Add Publication history to More and remove the footer links from Posts and Schedules.
+- Check: client type check and production build.

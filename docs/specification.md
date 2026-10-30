@@ -96,7 +96,7 @@ Delete activity events after 30 days. Retain open incidents and pending delivery
 
 Use English, a light theme, Web Awesome controls, clear spacing, and iOS-style navigation. Follow the Web Awesome documentation site’s white surfaces, light borders, compact control typography and restrained blue accents. Design for mobile screens first. Support Safari and Chromium. Use semantic HTML, visible focus, labelled fields, and touch targets of at least 44 CSS pixels. Do not add PWA support, dark mode, or decorative blur effects.
 
-Release 1 pages: Dashboard, Sources, Rules, Matched Messages, Connectors, Activity Log, and Settings. Add Posts and Schedules in Phase 2. Use bottom navigation for frequent actions and a More page for other pages. Show loading, empty, error, and disconnected states.
+Release 1 pages: Dashboard, Sources, Rules, Matched Messages, Connectors, Activity Log, and Settings. Add Posts and Schedules in Phase 2. Use bottom navigation for frequent actions and a More page for other pages, including Publication history. Show loading, empty, error, and disconnected states.
 
 Show user-action failures in a dismissible modal dialog, including deletion restrictions, failed saves and retries. Bulk failures include completed/failed counts and distinct error messages. Keep loading errors inline with retry controls.
 

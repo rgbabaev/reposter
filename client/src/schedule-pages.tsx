@@ -86,9 +86,6 @@ export function SchedulesPage() {
           "Create a post, then choose its destination and recurring time."
         }
       />
-      <Link class="button" href="/publications">
-        Publication history
-      </Link>
     </>
   );
 }

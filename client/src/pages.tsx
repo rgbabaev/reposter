@@ -1512,6 +1512,13 @@ export function MorePage() {
           </span>
           <span aria-hidden="true">›</span>
         </Link>
+        <Link href="/publications">
+          <span>
+            <strong>Publication history</strong>
+            <small>Sent messages and runs needing review</small>
+          </span>
+          <span aria-hidden="true">›</span>
+        </Link>
         <Link href="/connectors">
           <span>
             <strong>Connectors</strong>

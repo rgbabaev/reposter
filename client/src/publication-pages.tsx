@@ -61,9 +61,6 @@ export function PostsPage() {
           "Create a post, then use a schedule to choose where and when to publish it."
         }
       />
-      <Link class="button" href="/publications">
-        Publication history
-      </Link>
     </>
   );
 }
