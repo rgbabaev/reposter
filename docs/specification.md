@@ -122,13 +122,13 @@ Deleting a post also deletes its publication history and uploaded images atomica
 
 Support bold, italic, underline, strikethrough, spoilers, inline code, preformatted text, links and blockquotes in a WYSIWYG post editor with a labelled toolbar, typing styles, links, undo/redo and keyboard shortcuts, plus attached-image ordering. Paste plain text using the current style. Preserve formatting and image order when saving, reopening and publishing posts, including captions, schedules and retry snapshots.
 
-Support configurable intervals of 1–24 whole hours, plus daily, weekly, and monthly calendar schedules in UTC. Hourly intervals start that many hours after creation or a recurrence change and retain their cadence across midnight, downtime and slow runs. Repeat one post. Clamp an unavailable monthly day to the month's last day. Preserve the original day for later months. Provide Pause, Resume, and Run Now. Run Now must not shift the recurring schedule.
+Support configurable intervals of 1–24 whole hours, plus daily, weekly, and monthly calendar schedules in UTC. Hourly intervals count from the schedule’s last successful publication, including Run Now and successful retries. Before its first publication, count from creation or a recurrence change. Changing the interval uses the saved last publication time even if its history was deleted; an overdue schedule runs once on recovery. Repeat one post. Clamp an unavailable monthly day to the month's last day. Preserve the original day for later months. Provide Pause, Resume, and Run Now. Run Now restarts hourly intervals after success; daily, weekly and monthly recurring times stay unchanged.
 
 Schedules support editing their post, destination and UTC recurrence. Preserve pause state; recompute the next run only when recurrence changes. Retain previous message IDs and their original destination when changing destinations. Confirm schedule deletion; stop future runs while retaining its post, Telegram messages and publication history. Block edits and deletion while a run is queued, running, failed or uncertain; resolve it through publication history first. Serialize these actions with run creation.
 
 Before publication, delete the previous publication from that schedule. Delete only system-created messages. Store every sent message ID, including album items. If deletion fails, stop that run and report the error. Treat an already deleted message as success.
 
-After downtime, run one overdue publication immediately. Do not replay every missed interval. Then resume the original recurrence. Serialize runs per schedule. Paused schedules must not run during restart. Store run state before external calls. Reconcile uncertain publication results before retrying.
+After downtime, run one overdue publication immediately. Do not replay every missed interval. Then wait a full hourly interval after successful publication, or resume the original calendar recurrence. Serialize runs per schedule. Paused schedules must not run during restart. Store run state before external calls. Reconcile uncertain publication results before retrying.
 
 ## 10. Completion and deferred work
 

@@ -261,12 +261,13 @@ export class Publications {
     error: string | null = null,
   ) {
     const row = this.row(id);
+    const completedAt = now();
     this.store.db.transaction(() => {
       this.store.db.run(
         "UPDATE publication_runs SET status=?,sent_ids=?,completed_at=?,error=? WHERE id=?",
         status,
         JSON.stringify(ids),
-        now(),
+        completedAt,
         error,
         id,
       );
@@ -277,22 +278,18 @@ export class Publications {
           row.destination,
           row.schedule_id,
         );
-      if (
-        row.schedule_id &&
-        row.trigger === "scheduled" &&
-        status !== "failed"
-      ) {
+      if (row.schedule_id && status !== "failed") {
         const schedule = this.store.db.get(
           "SELECT calendar,next_run_at FROM schedules WHERE id=?",
           row.schedule_id,
         )!;
+        const calendar = JSON.parse(schedule.calendar);
         this.store.db.run(
-          "UPDATE schedules SET next_run_at=? WHERE id=?",
-          nextOccurrence(
-            JSON.parse(schedule.calendar),
-            new Date(),
-            new Date(schedule.next_run_at),
-          ),
+          "UPDATE schedules SET last_published_at=?,next_run_at=? WHERE id=?",
+          completedAt,
+          calendar.frequency === "hourly" || row.trigger === "scheduled"
+            ? nextOccurrence(calendar, new Date(completedAt))
+            : schedule.next_run_at,
           row.schedule_id,
         );
       }

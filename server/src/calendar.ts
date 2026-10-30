@@ -42,16 +42,10 @@ export function validateCalendar(value: unknown): CalendarSchedule {
 export function nextOccurrence(
   calendar: CalendarSchedule,
   after: Date,
-  anchor: Date = after,
 ): string {
   if (calendar.frequency === "hourly") {
     const interval = calendar.intervalHours * 60 * 60 * 1000;
-    const anchorTime = anchor.getTime();
-    const steps = Math.max(
-      0,
-      Math.floor((after.getTime() - anchorTime) / interval) + 1,
-    );
-    return new Date(anchorTime + steps * interval).toISOString();
+    return new Date(after.getTime() + interval).toISOString();
   }
   const year = after.getUTCFullYear(),
     month = after.getUTCMonth();

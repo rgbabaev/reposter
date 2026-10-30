@@ -180,7 +180,8 @@ function ScheduleCard({
         </Link>
       </div>
       <p class="footnote">
-        Run Now works while paused and preserves the next recurring time.
+        Run Now works while paused. For hourly intervals, the next run is counted
+        from its successful publication; calendar times stay unchanged.
       </p>
     </wa-card>
   );
@@ -345,9 +346,9 @@ export function ScheduleEditorPage({ id }: { id?: string }) {
                 }
               >
                 <small slot="hint">
-                  Use 1–24 whole hours. The first run is this many hours after
-                  creating the schedule or changing its interval. Run Now posts
-                  immediately without shifting the interval.
+                  Use 1–24 whole hours after the last successful publication,
+                  including Run Now. Before the first publication, count from
+                  creating the schedule or changing its interval.
                 </small>
               </wa-input>
             </div>

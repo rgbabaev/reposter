@@ -257,3 +257,9 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 - [x] Atomically remove a post, its history and images; release deleted schedule references while preserving other posts' history and surviving schedules' replacement tracking.
 - [x] Retain existing/paused schedule and active-run deletion guards; update single/bulk confirmations.
 - Check: build/type checks, storage regressions and Chromium/WebKit single/bulk deletion. Results: [update-checks.md](update-checks.md).
+
+### 34. Count hourly intervals from successful publication
+
+- [x] Persist each schedule's last successful publication independently of history; use it for interval changes, Run Now, retries and subsequent runs.
+- [x] Backfill and correct existing hourly due times without resuming paused schedules or bypassing unfinished runs; retain calendar recurrence.
+- Check: build/type checks and regression coverage for two six-hour schedules, timers, restart, upgrade, slow runs, retries and deleted history. Results: [update-checks.md](update-checks.md).

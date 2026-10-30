@@ -1,5 +1,7 @@
 # 0022: Preserve hourly publication intervals
 
+Interval timing is superseded by [ADR 0025](0025-publication-based-intervals.md).
+
 ## Context
 
 Daily schedules cannot publish several times a day. Hour intervals must remain consistent across midnight, downtime and slow publications.

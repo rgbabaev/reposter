@@ -9,6 +9,7 @@ import { Storage } from "../dist/db.js";
 import { Publications } from "../dist/publications.js";
 import { Schedules } from "../dist/schedules.js";
 import { Store } from "../dist/store.js";
+import { PublicationError } from "../dist/connector.js";
 
 const hour = 60 * 60 * 1000;
 
@@ -42,18 +43,14 @@ test("hourly intervals accept whole hours and discard calendar-only fields", () 
   }
 });
 
-test("hourly recurrence preserves cadence at boundaries and skips missed runs", () => {
-  const calendar = { frequency: "hourly", intervalHours: 5 };
-  const anchor = new Date("2026-12-31T23:15:30.000Z");
-  assert.equal(nextOccurrence(calendar, anchor), "2027-01-01T04:15:30.000Z");
+test("hourly recurrence counts elapsed hours from a successful publication", () => {
+  const calendar = { frequency: "hourly", intervalHours: 6 };
   for (const [after, expected] of [
-    ["2026-12-31T22:00:00.000Z", "2026-12-31T23:15:30.000Z"],
-    ["2026-12-31T23:15:30.000Z", "2027-01-01T04:15:30.000Z"],
-    ["2027-01-01T04:15:29.999Z", "2027-01-01T04:15:30.000Z"],
-    ["2027-01-01T04:15:30.000Z", "2027-01-01T09:15:30.000Z"],
-    ["2027-01-03T01:00:00.000Z", "2027-01-03T01:15:30.000Z"],
+    ["2026-12-31T23:15:30.000Z", "2027-01-01T05:15:30.000Z"],
+    ["2026-10-30T11:46:23.098Z", "2026-10-30T17:46:23.098Z"],
+    ["2026-10-30T11:46:01.287Z", "2026-10-30T17:46:01.287Z"],
   ]) {
-    assert.equal(nextOccurrence(calendar, new Date(after), anchor), expected);
+    assert.equal(nextOccurrence(calendar, new Date(after)), expected);
   }
 });
 
@@ -83,9 +80,9 @@ test("calendar recurrences retain their UTC and month-end behavior", () => {
   );
 });
 
-function fixture(t) {
+function fixture(t, timers = []) {
   t.mock.timers.enable({
-    apis: ["Date"],
+    apis: ["Date", ...timers],
     now: new Date("2026-10-30T21:15:00Z"),
   });
   const directory = mkdtempSync(join(tmpdir(), "reposter-hourly-"));
@@ -111,6 +108,7 @@ function fixture(t) {
     return services;
   };
   t.after(async () => {
+    services.schedules.stop();
     await services.publications.stop();
     db.close();
     rmSync(directory, { recursive: true, force: true });
@@ -140,7 +138,7 @@ async function settle(publications) {
   );
 }
 
-function createSchedule({ store, publications, schedules }) {
+function createSchedule({ store, publications, schedules }, intervalHours = 5) {
   const source = store.addSource(
     { externalId: "123", name: "Group", kind: "group" },
     "0",
@@ -149,11 +147,11 @@ function createSchedule({ store, publications, schedules }) {
   return schedules.create({
     postId: post.id,
     sourceId: source.id,
-    calendar: { frequency: "hourly", intervalHours: 5 },
+    calendar: { frequency: "hourly", intervalHours },
   });
 }
 
-test("hourly schedules persist, replace publications and keep cadence through pause and Run Now", async (t) => {
+test("hourly schedules persist and count the next interval from resumed publication", async (t) => {
   const context = fixture(t);
   let { publications, schedules } = context;
   const schedule = createSchedule(context);
@@ -177,18 +175,18 @@ test("hourly schedules persist, replace publications and keep cadence through pa
   assert.deepEqual(context.deleted, ["1"]);
   assert.equal(
     schedules.get(schedule.id).nextRunAt,
-    "2026-10-31T17:15:00.000Z",
+    "2026-10-31T19:15:00.000Z",
   );
   schedules.tick();
   assert.equal(publications.list().total, 2);
-  t.mock.timers.tick(3 * hour);
+  t.mock.timers.tick(5 * hour);
   schedules.tick();
   await settle(publications);
   assert.equal(publications.list().total, 3);
   assert.deepEqual(context.deleted, ["1", "2"]);
   assert.equal(
     schedules.get(schedule.id).nextRunAt,
-    "2026-10-31T22:15:00.000Z",
+    "2026-11-01T00:15:00.000Z",
   );
 });
 
@@ -230,7 +228,7 @@ test("hourly edits preserve the next run unless recurrence changes", async (t) =
   assert.equal(updated.nextRunAt, "2026-10-31T09:00:00.000Z");
 });
 
-test("slow scheduled publications skip intervals without shifting cadence", async (t) => {
+test("slow scheduled publications wait a full interval after successful completion", async (t) => {
   const context = fixture(t);
   const { publications, schedules, connector } = context;
   const schedule = createSchedule(context);
@@ -244,8 +242,185 @@ test("slow scheduled publications skip intervals without shifting cadence", asyn
   await settle(publications);
   assert.equal(
     schedules.get(schedule.id).nextRunAt,
-    "2026-10-31T17:15:00.000Z",
+    "2026-10-31T19:15:00.000Z",
   );
   schedules.tick();
   assert.equal(publications.list().total, 1);
+});
+
+test("Run Now restarts an hourly interval from successful completion", async (t) => {
+  const context = fixture(t);
+  const { publications, schedules } = context;
+  const schedule = createSchedule(context, 6);
+  schedules.pause(schedule.id, true);
+  t.mock.timers.tick(hour);
+  publications.start();
+  schedules.runNow(schedule.id);
+  await settle(publications);
+  assert.equal(schedules.get(schedule.id).nextRunAt, "2026-10-31T04:15:00.000Z");
+  assert.equal(schedules.get(schedule.id).paused, true);
+  const restarted = await context.restart();
+  assert.equal(restarted.schedules.get(schedule.id).nextRunAt, "2026-10-31T04:15:00.000Z");
+});
+
+test("changing an interval uses that schedule's last successful publication", async (t) => {
+  const context = fixture(t);
+  const { publications, schedules } = context;
+  const first = createSchedule(context);
+  const second = schedules.create({
+    postId: first.postId,
+    sourceId: context.store.sources()[0].id,
+    calendar: { frequency: "daily", hour: 9, minute: 0 },
+  });
+  publications.start();
+  schedules.runNow(first.id);
+  await settle(publications);
+  t.mock.timers.tick(hour);
+  schedules.runNow(second.id);
+  await settle(publications);
+  t.mock.timers.tick(3 * hour);
+  for (const schedule of [first, second])
+    schedules.update(schedule.id, {
+      postId: schedule.postId,
+      calendar: { frequency: "hourly", intervalHours: 6 },
+    });
+  assert.equal(schedules.get(first.id).nextRunAt, "2026-10-31T03:15:00.000Z");
+  assert.equal(schedules.get(second.id).nextRunAt, "2026-10-31T04:15:00.000Z");
+  t.mock.timers.tick(2 * hour);
+  schedules.tick();
+  await settle(publications);
+  assert.equal(publications.list().total, 3);
+  assert.equal(schedules.get(first.id).nextRunAt, "2026-10-31T09:15:00.000Z");
+  assert.equal(schedules.get(second.id).nextRunAt, "2026-10-31T04:15:00.000Z");
+  t.mock.timers.tick(hour);
+  schedules.tick();
+  await settle(publications);
+  assert.equal(publications.list().total, 4);
+  assert.equal(schedules.get(second.id).nextRunAt, "2026-10-31T10:15:00.000Z");
+});
+
+test("failed Run Now leaves the interval unchanged until a retry succeeds", async (t) => {
+  const context = fixture(t);
+  const { publications, schedules, connector } = context;
+  const schedule = createSchedule(context, 6);
+  connector.publish = async () => {
+    throw new PublicationError("PUBLICATION_REJECTED", "not_sent");
+  };
+  publications.start();
+  t.mock.timers.tick(hour);
+  const run = schedules.runNow(schedule.id);
+  for (let attempt = 0; attempt < 50 && publications.get(run.id).status !== "failed"; attempt++) {
+    publications.wake();
+    await new Promise(setImmediate);
+  }
+  assert.equal(publications.get(run.id).status, "failed");
+  assert.equal(schedules.get(schedule.id).nextRunAt, schedule.nextRunAt);
+  t.mock.timers.tick(hour);
+  connector.publish = async () => ["retried"];
+  publications.retry(run.id);
+  await settle(publications);
+  assert.equal(schedules.get(schedule.id).nextRunAt, "2026-10-31T05:15:00.000Z");
+});
+
+test("manual calendar publications preserve their recurring time", async (t) => {
+  const context = fixture(t);
+  const { publications, schedules } = context;
+  const schedule = createSchedule(context);
+  const daily = schedules.update(schedule.id, {
+    postId: schedule.postId,
+    calendar: { frequency: "daily", hour: 9, minute: 0 },
+  });
+  publications.start();
+  t.mock.timers.tick(hour);
+  schedules.runNow(schedule.id);
+  await settle(publications);
+  assert.equal(schedules.get(schedule.id).nextRunAt, daily.nextRunAt);
+});
+
+test("upgrading corrects existing hourly due times without altering blocked or calendar schedules", async (t) => {
+  const context = fixture(t);
+  const { store, publications, schedules } = context;
+  const first = createSchedule(context, 6);
+  const source = store.sources()[0];
+  const create = (calendar) => schedules.create({ postId: first.postId, sourceId: source.id, calendar });
+  const paused = create({ frequency: "hourly", intervalHours: 6 });
+  schedules.pause(paused.id, true);
+  const blocked = create({ frequency: "hourly", intervalHours: 6 });
+  const daily = create({ frequency: "daily", hour: 9, minute: 0 });
+  const unpublished = create({ frequency: "hourly", intervalHours: 6 });
+  for (const schedule of [first, paused, blocked, daily]) {
+    const run = publications.queue(schedule.postId, schedule.destination, schedule.id);
+    store.db.run(
+      "UPDATE publication_runs SET status='sent',completed_at='2026-10-30T11:46:23.098Z' WHERE id=?",
+      run.id,
+    );
+  }
+  publications.queue(blocked.postId, blocked.destination, blocked.id);
+  store.db.run("ALTER TABLE schedules DROP COLUMN last_published_at");
+  store.db.run("DELETE FROM migrations WHERE version='012-publication-based-intervals.sql'");
+  const restarted = await context.restart();
+  assert.equal(restarted.schedules.get(first.id).nextRunAt, "2026-10-30T17:46:23.098Z");
+  assert.equal(restarted.schedules.get(paused.id).nextRunAt, "2026-10-30T17:46:23.098Z");
+  assert.equal(restarted.schedules.get(paused.id).paused, true);
+  assert.equal(restarted.schedules.get(blocked.id).nextRunAt, blocked.nextRunAt);
+  assert.equal(restarted.schedules.get(daily.id).nextRunAt, daily.nextRunAt);
+  assert.equal(restarted.schedules.get(unpublished.id).nextRunAt, unpublished.nextRunAt);
+  restarted.publications.start();
+  restarted.schedules.tick();
+  await settle(restarted.publications);
+  assert.equal(restarted.publications.list().total, 6);
+  assert.equal(restarted.schedules.get(first.id).nextRunAt, "2026-10-31T03:15:00.000Z");
+  assert.equal(restarted.schedules.get(paused.id).nextRunAt, "2026-10-30T17:46:23.098Z");
+});
+
+test("timer callbacks publish two six-hour schedules without browser activity", async (t) => {
+  const context = fixture(t, ["setInterval"]);
+  const { publications, schedules, store } = context;
+  const first = createSchedule(context, 6);
+  const secondSource = store.addSource(
+    { externalId: "456", name: "Another group", kind: "group" },
+    "0",
+  );
+  const second = schedules.create({
+    postId: first.postId,
+    sourceId: secondSource.id,
+    calendar: first.calendar,
+  });
+  publications.start();
+  schedules.start();
+  await new Promise(setImmediate);
+  assert.equal(publications.list().total, 0);
+  t.mock.timers.setTime(Date.parse(first.nextRunAt));
+  for (let attempt = 0; attempt < 10 && context.sent.length < 2; attempt++) {
+    t.mock.timers.tick(1000);
+    await new Promise(setImmediate);
+  }
+  assert.equal(context.sent.length, 2);
+  for (const schedule of [first, second]) {
+    const run = publications.list().items.find((run) => run.scheduleId === schedule.id);
+    assert.equal(run.status, "sent");
+    assert.equal(
+      schedules.get(schedule.id).nextRunAt,
+      new Date(Date.parse(run.completedAt) + 6 * hour).toISOString(),
+    );
+  }
+});
+
+test("deleting publication history preserves the interval's last successful publication", async (t) => {
+  const context = fixture(t);
+  const { publications, schedules } = context;
+  const schedule = createSchedule(context);
+  publications.start();
+  const run = schedules.runNow(schedule.id);
+  await settle(publications);
+  publications.remove(run.id);
+  t.mock.timers.tick(4 * hour);
+  schedules.update(schedule.id, {
+    postId: schedule.postId,
+    calendar: { frequency: "hourly", intervalHours: 6 },
+  });
+  assert.equal(publications.list().total, 0);
+  assert.equal(schedules.get(schedule.id).nextRunAt, "2026-10-31T03:15:00.000Z");
+  const restarted = await context.restart();
+  assert.equal(restarted.schedules.get(schedule.id).nextRunAt, "2026-10-31T03:15:00.000Z");
 });

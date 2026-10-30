@@ -108,3 +108,9 @@ Type checks and production build pass. Disposable Chromium/WebKit checks cover r
 
 - Build/type checks and all 13 backend tests pass (`npm run build && node --test server/tests/*.test.mjs`). Seven deletion regressions cover completed/failed history, retained images, existing/paused schedules, deleted schedules, active runs, other posts' history, subsequent replacement and transaction rollback.
 - Disposable Chromium/WebKit checks pass single deletion, confirmation cancellation, history cleanup after schedule deletion, mixed bulk results and schedule-restriction dialogs. No live Telegram messages were sent or deleted; no migration is required.
+
+## Publication-based intervals (task 34)
+
+- Build/type checks and all 20 backend tests pass. Coverage includes two six-hour schedules driven by timers, successful Run Now/retry, slow completion, upgrade correction, pause/restart, deleted history and preserved calendar times.
+- Chromium/WebKit pass interval creation/editing/reopening, validation, calendar conversion and 320/390/900px layouts. A read-only migration preview corrects the operator's two schedules from approximately 22:23 to 17:46 UTC on 2026-10-30, six hours after their successful publications.
+- Restart to apply migration 012. Overdue schedules run once after reconnecting. No live publications or operational database changes were made during verification.

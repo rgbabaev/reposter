@@ -95,12 +95,26 @@ export class Schedules {
       const changed =
         JSON.stringify(calendar) !==
         JSON.stringify(validateCalendar(schedule.calendar));
+      const lastPublication =
+        changed && calendar.frequency === "hourly"
+          ? this.store.db.get(
+              "SELECT last_published_at FROM schedules WHERE id=?",
+              id,
+            )
+          : undefined;
       this.store.db.run(
         "UPDATE schedules SET post_id=?,destination=?,calendar=?,next_run_at=? WHERE id=?",
         input.postId,
         JSON.stringify(destination),
         JSON.stringify(calendar),
-        changed ? nextOccurrence(calendar, new Date()) : schedule.nextRunAt,
+        changed
+          ? nextOccurrence(
+              calendar,
+              lastPublication?.last_published_at
+                ? new Date(lastPublication.last_published_at)
+                : new Date(),
+            )
+          : schedule.nextRunAt,
         id,
       );
       return this.get(id);
@@ -182,11 +196,7 @@ export class Schedules {
           );
           this.store.db.run(
             "UPDATE schedules SET next_run_at=? WHERE id=?",
-            nextOccurrence(
-              schedule.calendar,
-              new Date(),
-              new Date(schedule.nextRunAt),
-            ),
+            nextOccurrence(schedule.calendar, new Date()),
             schedule.id,
           );
         });
