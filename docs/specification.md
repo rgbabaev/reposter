@@ -118,6 +118,8 @@ Support a regular Node.js process and an optional container. Store the database 
 
 Create a reusable post in the UI with formatted text and uploaded images. Posts contain content only; select destinations in schedules. The Posts page links to schedule creation with its post preselected. Use schedule Run Now for immediate publication. Publish from the personal account to one group or forum topic per schedule. Import from existing Telegram messages is later work.
 
+Deleting a post also deletes its publication history and uploaded images atomically. Existing schedules, including paused schedules, block post deletion; deleted schedules and publication history do not. Resolve queued, running or uncertain runs before deleting their post. Preserve published Telegram messages, other posts' history and surviving schedules' replacement tracking.
+
 Support bold, italic, underline, strikethrough, spoilers, inline code, preformatted text, links and blockquotes in a WYSIWYG post editor with a labelled toolbar, typing styles, links, undo/redo and keyboard shortcuts, plus attached-image ordering. Paste plain text using the current style. Preserve formatting and image order when saving, reopening and publishing posts, including captions, schedules and retry snapshots.
 
 Support configurable intervals of 1–24 whole hours, plus daily, weekly, and monthly calendar schedules in UTC. Hourly intervals start that many hours after creation or a recurrence change and retain their cadence across midnight, downtime and slow runs. Repeat one post. Clamp an unavailable monthly day to the month's last day. Preserve the original day for later months. Provide Pause, Resume, and Run Now. Run Now must not shift the recurring schedule.

@@ -31,7 +31,7 @@ export function PostsPage() {
     {
       label: "Delete",
       confirm:
-        "Published Telegram messages remain. Posts referenced by schedules or publication history cannot be deleted.",
+        "Their publication history is also deleted. Published Telegram messages remain. Posts used by schedules cannot be deleted.",
       run: (post) => api(`/posts/${post.id}`, { method: "DELETE" }),
     },
   ];
@@ -92,7 +92,7 @@ function PostCard({ post, refresh }: { post: Post; refresh: () => void }) {
           onClick={async () => {
             if (
               await confirmAction(
-                `Delete “${postHeading(post)}”? Published Telegram messages remain.`,
+                `Delete “${postHeading(post)}” and its publication history? Published Telegram messages remain.`,
               )
             )
               void action.run(async () => {

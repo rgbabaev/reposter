@@ -148,17 +148,27 @@ export class Posts {
     );
   }
   remove(id: string) {
-    this.get(id);
-    this.requireIdle(id);
-    if (
-      this.store.db.get("SELECT id FROM schedules WHERE post_id=?", id) ||
-      this.store.db.get("SELECT id FROM publication_runs WHERE post_id=?", id)
-    )
-      throw new HttpError(
-        409,
-        "Posts used by schedules or publication history cannot be deleted.",
+    this.store.db.transaction(() => {
+      this.get(id);
+      this.requireIdle(id);
+      if (
+        this.store.db.get(
+          "SELECT id FROM schedules WHERE post_id=? AND deleted_at IS NULL",
+          id,
+        )
+      )
+        throw new HttpError(409, "Posts used by schedules cannot be deleted.");
+      this.store.db.run("DELETE FROM publication_runs WHERE post_id=?", id);
+      this.store.db.run(
+        "UPDATE publication_runs SET schedule_id=NULL WHERE schedule_id IN (SELECT id FROM schedules WHERE post_id=? AND deleted_at IS NOT NULL)",
+        id,
       );
-    this.store.db.run("DELETE FROM posts WHERE id=?", id);
+      this.store.db.run(
+        "DELETE FROM schedules WHERE post_id=? AND deleted_at IS NOT NULL",
+        id,
+      );
+      this.store.db.run("DELETE FROM posts WHERE id=?", id);
+    });
   }
 }
 function validateImage(

@@ -103,3 +103,8 @@ Local checks on 2026-10-30 use disposable databases and a simulated connector; n
 ## Action error dialogs (task 32)
 
 Type checks and production build pass. Disposable Chromium/WebKit checks cover referenced-post deletion, Close/Escape dismissal, Close autofocus, scroll cleanup, 320/390px dialogs, mixed bulk deletion counts and failure details, preserved drafts after failed saves, successful retry and inline loading errors. No live Telegram or SMTP messages were sent.
+
+## Post deletion and history (task 33)
+
+- Build/type checks and all 13 backend tests pass (`npm run build && node --test server/tests/*.test.mjs`). Seven deletion regressions cover completed/failed history, retained images, existing/paused schedules, deleted schedules, active runs, other posts' history, subsequent replacement and transaction rollback.
+- Disposable Chromium/WebKit checks pass single deletion, confirmation cancellation, history cleanup after schedule deletion, mixed bulk results and schedule-restriction dialogs. No live Telegram messages were sent or deleted; no migration is required.

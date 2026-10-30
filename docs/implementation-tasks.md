@@ -251,3 +251,9 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 - [x] Use a shared dismissible dialog for single and bulk action failures, including deletion restrictions, saves and retries.
 - [x] Preserve bulk result counts, form values and inline loading/retry states.
 - Check: type/build checks and Chromium/WebKit cover deletion failures, Close/Escape, autofocus, scroll cleanup, bulk partial results, failed-save recovery and 320/390px layouts. Results: [update-checks.md](update-checks.md).
+
+### 33. Delete publication history with posts
+
+- [x] Atomically remove a post, its history and images; release deleted schedule references while preserving other posts' history and surviving schedules' replacement tracking.
+- [x] Retain existing/paused schedule and active-run deletion guards; update single/bulk confirmations.
+- Check: build/type checks, storage regressions and Chromium/WebKit single/bulk deletion. Results: [update-checks.md](update-checks.md).
