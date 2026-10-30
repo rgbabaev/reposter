@@ -10,6 +10,14 @@ export function validateCalendar(value: unknown): CalendarSchedule {
     Number.isInteger(value) &&
     value >= min &&
     value <= max;
+  if (input.frequency === "hourly") {
+    if (!integer(input.intervalHours, 1, 24))
+      throw new HttpError(400, "Use a whole number of hours from 1 to 24.");
+    return {
+      frequency: "hourly",
+      intervalHours: input.intervalHours as number,
+    };
+  }
   if (
     !["daily", "weekly", "monthly"].includes(String(input.frequency)) ||
     !integer(input.hour, 0, 23) ||
@@ -22,7 +30,7 @@ export function validateCalendar(value: unknown): CalendarSchedule {
       "Use a valid UTC time, weekday (0–6), or monthly day (1–31).",
     );
   return {
-    frequency: input.frequency as CalendarSchedule["frequency"],
+    frequency: input.frequency as "daily" | "weekly" | "monthly",
     hour: input.hour as number,
     minute: input.minute as number,
     ...(input.frequency === "weekly"
@@ -34,7 +42,17 @@ export function validateCalendar(value: unknown): CalendarSchedule {
 export function nextOccurrence(
   calendar: CalendarSchedule,
   after: Date,
+  anchor: Date = after,
 ): string {
+  if (calendar.frequency === "hourly") {
+    const interval = calendar.intervalHours * 60 * 60 * 1000;
+    const anchorTime = anchor.getTime();
+    const steps = Math.max(
+      0,
+      Math.floor((after.getTime() - anchorTime) / interval) + 1,
+    );
+    return new Date(anchorTime + steps * interval).toISOString();
+  }
   const year = after.getUTCFullYear(),
     month = after.getUTCMonth();
   let candidate: Date;

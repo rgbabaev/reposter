@@ -31,6 +31,8 @@ const weekdays = [
   "Saturday",
 ];
 function describe(calendar: CalendarSchedule) {
+  if (calendar.frequency === "hourly")
+    return `Every ${calendar.intervalHours} ${calendar.intervalHours === 1 ? "hour" : "hours"}`;
   const time = `${String(calendar.hour).padStart(2, "0")}:${String(calendar.minute).padStart(2, "0")} UTC`;
   return calendar.frequency === "daily"
     ? `Daily at ${time}`
@@ -196,6 +198,7 @@ export function ScheduleEditorPage({ id }: { id?: string }) {
   const [frequency, setFrequency] =
     useState<CalendarSchedule["frequency"]>("daily");
   const [time, setTime] = useState("09:00");
+  const [intervalHours, setIntervalHours] = useState(3);
   const [weekday, setWeekday] = useState(1);
   const [day, setDay] = useState(1);
   useEffect(() => {
@@ -203,11 +206,15 @@ export function ScheduleEditorPage({ id }: { id?: string }) {
     const schedule = remote.data;
     setPostId(schedule.postId);
     setFrequency(schedule.calendar.frequency);
-    setTime(
-      `${String(schedule.calendar.hour).padStart(2, "0")}:${String(schedule.calendar.minute).padStart(2, "0")}`,
-    );
-    setWeekday(schedule.calendar.weekday ?? 1);
-    setDay(schedule.calendar.day ?? 1);
+    if (schedule.calendar.frequency === "hourly") {
+      setIntervalHours(schedule.calendar.intervalHours);
+    } else {
+      setTime(
+        `${String(schedule.calendar.hour).padStart(2, "0")}:${String(schedule.calendar.minute).padStart(2, "0")}`,
+      );
+      setWeekday(schedule.calendar.weekday ?? 1);
+      setDay(schedule.calendar.day ?? 1);
+    }
   }, [remote.data]);
   const assignedSource = sources.data?.items.find(
     (source) =>
@@ -246,13 +253,16 @@ export function ScheduleEditorPage({ id }: { id?: string }) {
               body: {
                 postId,
                 ...(sourceId ? { sourceId } : {}),
-                calendar: {
-                  frequency,
-                  hour,
-                  minute,
-                  ...(frequency === "weekly" ? { weekday } : {}),
-                  ...(frequency === "monthly" ? { day } : {}),
-                },
+                calendar:
+                  frequency === "hourly"
+                    ? { frequency, intervalHours }
+                    : {
+                        frequency,
+                        hour,
+                        minute,
+                        ...(frequency === "weekly" ? { weekday } : {}),
+                        ...(frequency === "monthly" ? { day } : {}),
+                      },
               },
             });
             navigate("/schedules");
@@ -315,20 +325,44 @@ export function ScheduleEditorPage({ id }: { id?: string }) {
                 )
               }
             >
+              <wa-option value="hourly">Every N hours</wa-option>
               <wa-option value="daily">Daily</wa-option>
               <wa-option value="weekly">Weekly</wa-option>
               <wa-option value="monthly">Monthly</wa-option>
             </wa-select>
           </div>
-          <div class="field">
-            <wa-input
-              label="Time (UTC)"
-              type="time"
-              required
-              value={time}
-              onInput={(event) => setTime(String(event.currentTarget.value))}
-            ></wa-input>
-          </div>
+          {frequency === "hourly" ? (
+            <div class="field">
+              <wa-input
+                label="Interval (hours)"
+                type="number"
+                required
+                min={1}
+                max={24}
+                step={1}
+                value={String(intervalHours)}
+                onInput={(event) =>
+                  setIntervalHours(Number(event.currentTarget.value))
+                }
+              >
+                <small slot="hint">
+                  Use 1–24 whole hours. The first run is this many hours after
+                  creating the schedule or changing its interval. Run Now posts
+                  immediately without shifting the interval.
+                </small>
+              </wa-input>
+            </div>
+          ) : (
+            <div class="field">
+              <wa-input
+                label="Time (UTC)"
+                type="time"
+                required
+                value={time}
+                onInput={(event) => setTime(String(event.currentTarget.value))}
+              ></wa-input>
+            </div>
+          )}
           {frequency === "weekly" && (
             <div class="field">
               <wa-select

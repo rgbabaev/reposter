@@ -190,13 +190,15 @@ export interface PublicationDestination {
   name: string;
   kind: "group" | "topic";
 }
-export interface CalendarSchedule {
-  frequency: "daily" | "weekly" | "monthly";
-  hour: number;
-  minute: number;
-  weekday?: number;
-  day?: number;
-}
+export type CalendarSchedule =
+  | { frequency: "hourly"; intervalHours: number }
+  | {
+      frequency: "daily" | "weekly" | "monthly";
+      hour: number;
+      minute: number;
+      weekday?: number;
+      day?: number;
+    };
 export interface Schedule {
   id: ID;
   ownerId: ID;
@@ -274,6 +276,8 @@ export function ruleHeading(
 }
 export function scheduleHeading(schedule: Schedule): string {
   const c = schedule.calendar;
+  if (c.frequency === "hourly")
+    return `${schedule.postHeading} → ${schedule.destination.name} · Every ${c.intervalHours} ${c.intervalHours === 1 ? "hour" : "hours"}`;
   const day =
     c.frequency === "weekly"
       ? ` ${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][c.weekday!]}`

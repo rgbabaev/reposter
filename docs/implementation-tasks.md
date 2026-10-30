@@ -239,3 +239,9 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 - [x] Match the documentation site’s white surfaces, typography, fine borders and restrained accents using shared theme tokens.
 - [x] Refine cards, metrics, navigation, form spacing and the editor toolbar while retaining accessible controls.
 - Check: production/type checks and Chromium/WebKit regressions cover forms, lists and dialogs; visual checks cover 320/390/900/1280px layouts.
+
+### 31. Add hourly publication intervals
+
+- [x] Add configurable 1–24 whole-hour intervals to schedule creation, editing, validation and headings.
+- [x] Preserve interval cadence through midnight, restart, downtime, slow runs and Run Now; retain pause and unfinished-run restrictions.
+- Check: type/build checks, recurrence and storage regressions, and browser creation/editing checks. Results: [update-checks.md](update-checks.md).

@@ -91,3 +91,11 @@ Local checks on 2026-10-30 use disposable databases and a simulated connector; n
 ## Appearance refinement (task 30)
 
 The interface now follows Web Awesome’s documentation styling using the existing default theme. Local visual checks cover login, dashboard, sources, rules, posts, schedules, settings and More at 320/390/900/1280px without horizontal overflow. Existing Chromium/WebKit form, bulk-action and image/dialog regressions remain the behavior checks. Physical-phone acceptance remains pending.
+
+## Hourly publication intervals (task 31)
+
+Local checks on 2026-10-30 use disposable databases and a simulated connector; no Telegram or SMTP messages are sent.
+
+- Type/build checks and six regressions pass: interval validation, UTC boundaries, calendar compatibility, restart/pause/Run Now, replacement, editing restrictions and slow-run cadence. Run `npm run build && node --test server/tests/hourly-schedules.test.mjs`.
+- Chromium/WebKit pass creation, editing/reopening, unchanged next time on unchanged recurrence, invalid/empty intervals, singular headings and switching back to daily. Layouts pass at 320/390/900px without page errors or horizontal overflow.
+- No migration is required. Live Telegram interval timing and physical-phone checks remain pending.

@@ -182,7 +182,11 @@ export class Schedules {
           );
           this.store.db.run(
             "UPDATE schedules SET next_run_at=? WHERE id=?",
-            nextOccurrence(schedule.calendar, new Date()),
+            nextOccurrence(
+              schedule.calendar,
+              new Date(),
+              new Date(schedule.nextRunAt),
+            ),
             schedule.id,
           );
         });

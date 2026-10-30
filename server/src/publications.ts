@@ -283,12 +283,16 @@ export class Publications {
         status !== "failed"
       ) {
         const schedule = this.store.db.get(
-          "SELECT calendar FROM schedules WHERE id=?",
+          "SELECT calendar,next_run_at FROM schedules WHERE id=?",
           row.schedule_id,
         )!;
         this.store.db.run(
           "UPDATE schedules SET next_run_at=? WHERE id=?",
-          nextOccurrence(JSON.parse(schedule.calendar), new Date()),
+          nextOccurrence(
+            JSON.parse(schedule.calendar),
+            new Date(),
+            new Date(schedule.next_run_at),
+          ),
           row.schedule_id,
         );
       }
