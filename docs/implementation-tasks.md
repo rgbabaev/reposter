@@ -268,3 +268,8 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 
 - [x] Add Publication history to More and remove the footer links from Posts and Schedules.
 - Check: client type check and production build.
+
+### 36. Keep list controls visible
+
+- [x] Make the shared Select and Filter toolbar sticky at the viewport top with an opaque surface and subtle divider.
+- Check: type/build checks and Chromium/WebKit scrolling, selection and filtering at phone and desktop widths.

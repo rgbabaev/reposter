@@ -1030,7 +1030,16 @@ p:last-child {
 }
 
 .bulk-selection {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   margin-block: 1rem;
+  padding-block: 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--wa-color-surface-default);
+}
+.bulk-selection > .actions {
+  margin-top: 0;
 }
 .bulk-item {
   position: relative;
