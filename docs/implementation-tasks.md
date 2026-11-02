@@ -289,3 +289,8 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 
 - [x] Remove the Sources list subheading and the shared divider beneath page headings. Reduce spacing below page descriptions.
 - Check: client type/build checks and Chromium/WebKit verify heading spacing, source discovery and sticky controls at 320/390/900px.
+
+### 40. Filter matches by source
+
+- [x] Add multiple historical source choices to the match filter dialog, combined with text and rules before counting and pagination. Preserve Apply/Clear/Cancel, page reset and selection reset.
+- Check: type/build checks, storage regressions and Chromium/WebKit filtering at phone and desktop widths.

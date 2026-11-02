@@ -118,3 +118,9 @@ Type checks and production build pass. Disposable Chromium/WebKit checks cover r
 ## Action result toasts (task 37)
 
 Local checks on 2026-10-30 pass TypeScript and production builds. Disposable Chromium/WebKit checks cover all five individual deletion confirmations, cancellation/failed deletion without success messages, bulk success/partial/total failure counts, selection exit, navigation persistence, automatic/manual dismissal and 320/390/900px placement with 44px close targets. The shared Web Awesome stack replaces inline bulk result text; existing error dialogs retain failure details. No live Telegram or SMTP actions were performed.
+
+## Source filters (task 40)
+
+TypeScript and production builds pass. Three storage regressions cover exact/multiple source names, literal special characters, combined Unicode text/rule filters, pagination and historical choices after source removal. Run `node --test server/tests/match-filters.test.mjs` after building.
+
+Disposable Chromium/WebKit checks pass Apply/Clear/Cancel/Escape, page/selection reset, empty results and 320/390/900px layouts. No migration or live Telegram/SMTP actions are required.

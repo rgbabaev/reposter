@@ -805,22 +805,35 @@ export function MatchesPage() {
   const [page, setPage] = useState(1);
   const [text, setText] = useState("");
   const [rules, setRules] = useState<string[]>([]);
-  const [filters, setFilters] = useState<{ text: string; rules: string[] }>({
+  const [sources, setSources] = useState<string[]>([]);
+  const [filters, setFilters] = useState<{
+    text: string;
+    rules: string[];
+    sources: string[];
+  }>({
     text: "",
     rules: [],
+    sources: [],
   });
   const parameters = new URLSearchParams({
     page: String(page),
     text: filters.text,
   });
   filters.rules.forEach((rule) => parameters.append("rule", rule));
+  filters.sources.forEach((source) => parameters.append("source", source));
   const query = parameters.toString();
   const remote = useRemote<MatchPage>(`/matches?${query}`, true);
   const [ruleNames, setRuleNames] = useState<string[]>([]);
+  const [sourceNames, setSourceNames] = useState<string[]>([]);
   useEffect(() => {
-    if (remote.data) setRuleNames(remote.data.ruleNames);
+    if (remote.data) {
+      setRuleNames(remote.data.ruleNames);
+      setSourceNames(remote.data.sourceNames);
+    }
   }, [remote.data]);
-  const filtered = !!(filters.text || filters.rules.length);
+  const filtered = !!(
+    filters.text || filters.rules.length || filters.sources.length
+  );
   const bulkActions: BulkAction<Match>[] = [
     {
       label: "Delete",
@@ -851,6 +864,7 @@ export function MatchesPage() {
             onClick={() => {
               setText(filters.text);
               setRules([...filters.rules]);
+              setSources([...filters.sources]);
               setFilterOpen(true);
             }}
           >
@@ -883,7 +897,7 @@ export function MatchesPage() {
             onSubmit={(event) => {
               event.preventDefault();
               setPage(1);
-              setFilters({ text: text.trim(), rules });
+              setFilters({ text: text.trim(), rules, sources });
               setFilterOpen(false);
             }}
           >
@@ -897,7 +911,31 @@ export function MatchesPage() {
                 onInput={(event) => setText(event.currentTarget.value ?? "")}
               />
             </div>
-            <fieldset class="match-rule-options">
+            <fieldset class="match-filter-options">
+              <legend>Sources</legend>
+              <p class="muted">
+                Match any selected source. Leave all unchecked for all sources.
+              </p>
+              {sourceNames.map((name) => (
+                <wa-checkbox
+                  class="check"
+                  key={name}
+                  checked={sources.includes(name)}
+                  onChange={(event) => {
+                    const checked = event.currentTarget.checked;
+                    setSources((selected) =>
+                      checked
+                        ? [...selected, name]
+                        : selected.filter((source) => source !== name),
+                    );
+                  }}
+                >
+                  {name}
+                </wa-checkbox>
+              ))}
+              {!sourceNames.length && <p>No saved sources</p>}
+            </fieldset>
+            <fieldset class="match-filter-options">
               <legend>Matched rules</legend>
               <p class="muted">
                 Match any selected rule. Leave all unchecked for all rules.
@@ -930,7 +968,8 @@ export function MatchesPage() {
                 onClick={() => {
                   setText("");
                   setRules([]);
-                  setFilters({ text: "", rules: [] });
+                  setSources([]);
+                  setFilters({ text: "", rules: [], sources: [] });
                   setPage(1);
                   setFilterOpen(false);
                 }}

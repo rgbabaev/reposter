@@ -1111,14 +1111,14 @@ p:last-child {
 .match-filter-dialog h2 {
   margin-top: 0;
 }
-.match-rule-options {
+.match-filter-options {
   min-width: 0;
   margin: 0;
   padding: 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
 }
-.match-rule-options .check {
+.match-filter-options .check {
   min-height: 44px;
   overflow-wrap: anywhere;
 }

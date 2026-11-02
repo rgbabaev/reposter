@@ -330,14 +330,30 @@ export class Store {
       );
     });
   }
-  matches(page = 1, pageSize = 25, text = "", rules: string[] = []): MatchPage {
+  matches(
+    page = 1,
+    pageSize = 25,
+    text = "",
+    rules: string[] = [],
+    sources: string[] = [],
+  ): MatchPage {
     const where = `WHERE instr(normalized_text(json_extract(snapshot, '$.text')), ?) > 0
       AND (? = '[]' OR EXISTS (
         SELECT 1 FROM json_each(matches.snapshot, '$.ruleNames')
         WHERE value IN (SELECT value FROM json_each(?))
+      ))
+      AND (? = '[]' OR json_extract(snapshot, '$.sourceName') IN (
+        SELECT value FROM json_each(?)
       ))`;
     const selectedRules = JSON.stringify(rules);
-    const parameters = [text.trim().normalize("NFC").toLowerCase(), selectedRules, selectedRules];
+    const selectedSources = JSON.stringify(sources);
+    const parameters = [
+      text.trim().normalize("NFC").toLowerCase(),
+      selectedRules,
+      selectedRules,
+      selectedSources,
+      selectedSources,
+    ];
     const rows = this.db.all(
       `SELECT snapshot FROM matches ${where} ORDER BY matched_at DESC,id DESC LIMIT ? OFFSET ?`,
       ...parameters,
@@ -352,6 +368,9 @@ export class Store {
       ruleNames: this.db.all(
         "SELECT DISTINCT value FROM matches, json_each(matches.snapshot, '$.ruleNames') ORDER BY value",
       ).map((row) => String(row.value)),
+      sourceNames: this.db.all(
+        "SELECT DISTINCT json_extract(snapshot, '$.sourceName') name FROM matches ORDER BY name",
+      ).map((row) => String(row.name)),
     };
   }
   private withDelivery(match: Match): Match {

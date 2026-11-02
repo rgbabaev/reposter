@@ -88,6 +88,7 @@ export interface Match {
 }
 export interface MatchPage extends Page<Match> {
   ruleNames: string[];
+  sourceNames: string[];
 }
 export interface MatchImage {
   externalItemId: ID;
