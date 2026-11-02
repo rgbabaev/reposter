@@ -294,3 +294,9 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 
 - [x] Add multiple historical source choices to the match filter dialog, combined with text and rules before counting and pagination. Preserve Apply/Clear/Cancel, page reset and selection reset.
 - Check: type/build checks, storage regressions and Chromium/WebKit filtering at phone and desktop widths.
+
+### 41. Persist filters in the URL
+
+- [x] Read and replace URL query parameters for applied match filters, Activity views and their pagination; preserve unrelated parameters and fragments.
+- [x] Restore state on reload and browser navigation; retain filter drafts, Apply/Clear page resets and selection reset.
+- Check: type/build checks and disposable Chromium/WebKit checks cover shared URLs, repeated/special values, history replacement, navigation and defaults.

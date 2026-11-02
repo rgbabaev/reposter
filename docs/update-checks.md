@@ -124,3 +124,9 @@ Local checks on 2026-10-30 pass TypeScript and production builds. Disposable Chr
 TypeScript and production builds pass. Three storage regressions cover exact/multiple source names, literal special characters, combined Unicode text/rule filters, pagination and historical choices after source removal. Run `node --test server/tests/match-filters.test.mjs` after building.
 
 Disposable Chromium/WebKit checks pass Apply/Clear/Cancel/Escape, page/selection reset, empty results and 320/390/900px layouts. No migration or live Telegram/SMTP actions are required.
+
+## URL filter state (task 41)
+
+TypeScript and production builds pass. Disposable Chromium/WebKit checks cover applied match filters, Activity views, pagination, shared links, reload, Back/Forward, same-path navigation, draft isolation, history replacement, preserved query/fragment/history state, invalid defaults and page clamping. Existing source-filter checks pass at 320/390/900px.
+
+WebKit scenarios pass in separate browser sessions; a combined run hits a native browser assertion on a later full navigation after history traversal. No live Telegram/SMTP actions or migration are required.

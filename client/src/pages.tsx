@@ -3,6 +3,7 @@ import { Dialog, confirmAction, ErrorDialog } from "./dialog";
 import { showToast } from "./toast";
 import { EntityList, usePageClamp, type BulkAction } from "./entity-list";
 import { MatchImageGallery } from "./match-images";
+import { useListParameters } from "./url-state";
 import { ruleHeading } from "@monitor/shared";
 import { useEffect, useRef, useState } from "preact/hooks";
 import type {
@@ -802,19 +803,16 @@ function MatchCard({ match }: { match: Match }) {
 }
 export function MatchesPage() {
   const [filterOpen, setFilterOpen] = useState(false);
-  const [page, setPage] = useState(1);
+  const { parameters: urlParameters, page, setPage, replaceParameters } =
+    useListParameters();
   const [text, setText] = useState("");
   const [rules, setRules] = useState<string[]>([]);
   const [sources, setSources] = useState<string[]>([]);
-  const [filters, setFilters] = useState<{
-    text: string;
-    rules: string[];
-    sources: string[];
-  }>({
-    text: "",
-    rules: [],
-    sources: [],
-  });
+  const filters = {
+    text: urlParameters.get("text")?.trim() || "",
+    rules: urlParameters.getAll("rule").filter(Boolean),
+    sources: urlParameters.getAll("source").filter(Boolean),
+  };
   const parameters = new URLSearchParams({
     page: String(page),
     text: filters.text,
@@ -896,8 +894,12 @@ export function MatchesPage() {
           <form
             onSubmit={(event) => {
               event.preventDefault();
-              setPage(1);
-              setFilters({ text: text.trim(), rules, sources });
+              replaceParameters({
+                text: text.trim(),
+                rule: rules,
+                source: sources,
+                page: undefined,
+              });
               setFilterOpen(false);
             }}
           >
@@ -969,8 +971,12 @@ export function MatchesPage() {
                   setText("");
                   setRules([]);
                   setSources([]);
-                  setFilters({ text: "", rules: [], sources: [] });
-                  setPage(1);
+                  replaceParameters({
+                    text: undefined,
+                    rule: undefined,
+                    source: undefined,
+                    page: undefined,
+                  });
                   setFilterOpen(false);
                 }}
               >
@@ -1209,12 +1215,13 @@ export function ConnectorsPage({ status }: { status?: ConnectorStatus }) {
 }
 
 export function ActivityPage() {
-  const [view, setView] = useState(
-    new URLSearchParams(location.search).get("view") === "delivery"
-      ? "delivery"
-      : "events",
-  );
-  const [page, setPage] = useState(1);
+  const { parameters, page, setPage, replaceParameters } = useListParameters();
+  const view = parameters.get("view") === "delivery" ? "delivery" : "events";
+  const setView = (view: "events" | "delivery") =>
+    replaceParameters({
+      view: view === "delivery" ? view : undefined,
+      page: undefined,
+    });
   const events = useRemote<Page<Activity>>(
     view === "events" ? `/activity?page=${page}` : null,
     true,
@@ -1260,10 +1267,7 @@ export function ActivityPage() {
           type="button"
           class={view === "events" ? "selected" : ""}
           aria-pressed={view === "events"}
-          onClick={() => {
-            setView("events");
-            setPage(1);
-          }}
+          onClick={() => setView("events")}
         >
           Events
         </Button>
@@ -1271,10 +1275,7 @@ export function ActivityPage() {
           type="button"
           class={view === "delivery" ? "selected" : ""}
           aria-pressed={view === "delivery"}
-          onClick={() => {
-            setView("delivery");
-            setPage(1);
-          }}
+          onClick={() => setView("delivery")}
         >
           Notification delivery
         </Button>

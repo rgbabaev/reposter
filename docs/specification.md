@@ -98,6 +98,8 @@ Use English, a light theme, Web Awesome controls, clear spacing, and iOS-style n
 
 Release 1 pages: Dashboard, Sources, Rules, Matched Messages, Connectors, Activity Log, and Settings. Add Posts and Schedules in Phase 2. Use bottom navigation for frequent actions and a More page for other pages, including Publication history. Show loading, empty, error, and disconnected states.
 
+Store applied filters, list views and pagination on pages with filters in URL query parameters. Replace the current history entry when these change; restore state on reload and browser navigation. Apply/Clear resets pagination; unsubmitted filter drafts do not change the URL.
+
 Keep creation controls for Sources, Rules, Posts and Schedules in the shared list's sticky toolbar beside Select. Omit page-heading dividers and the Sources list subheading. Keep page descriptions close to their content.
 
 Show user-action failures in a dismissible modal dialog, including deletion restrictions, failed saves and retries. Bulk failures include completed/failed counts and distinct error messages. Keep loading errors inline with retry controls.
