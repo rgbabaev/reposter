@@ -144,7 +144,9 @@ async function main() {
     void shutdown(true);
   });
   server.listen(config.port, config.bind, () => {
+    const host = config.bind.includes(":") ? `[${config.bind}]` : config.bind;
     console.log("Personal Monitor started. All stored times are UTC.");
+    console.log(`Listening on http://${host}:${config.port}`);
     void connector
       .start(
         (id) => {
