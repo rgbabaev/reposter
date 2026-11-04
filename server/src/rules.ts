@@ -40,6 +40,11 @@ export function validateRule(input: Record<string, unknown>): RuleInput {
       throw new HttpError(400, "Invalid text condition.");
     const condition = value as Record<string, unknown>;
     if (
+      condition.negated !== undefined &&
+      typeof condition.negated !== "boolean"
+    )
+      throw new HttpError(400, "Condition negated must be boolean.");
+    if (
       !["part", "word", "phrase", "hashtag"].includes(String(condition.kind)) ||
       typeof condition.value !== "string" ||
       !condition.value.trim() ||
@@ -52,8 +57,14 @@ export function validateRule(input: Record<string, unknown>): RuleInput {
     const text = condition.value.trim().normalize("NFC");
     if (condition.kind === "hashtag" && !/^#?[\p{L}\p{N}_\p{M}]+$/u.test(text))
       throw new HttpError(400, "A hashtag must be one complete tag.");
-    return { kind: condition.kind as TextCondition["kind"], value: text };
+    return {
+      kind: condition.kind as TextCondition["kind"],
+      value: text,
+      ...(condition.negated ? { negated: true } : {}),
+    };
   });
+  if (!conditions.some((condition) => !condition.negated))
+    throw new HttpError(400, "Provide at least one required text condition.");
   if (
     !Array.isArray(input.attachmentTypes) ||
     !input.attachmentTypes.every((t) =>
@@ -77,17 +88,21 @@ export function matchesRule(rule: Rule, item: IncomingItem): boolean {
     return false;
   const text = normalize(item.text);
   return rule.conditions.every((condition) => {
-    const value = normalize(condition.value);
-    if (condition.kind === "part" || condition.kind === "phrase")
-      return new RegExp(escape(value), "iu").test(text);
-    if (condition.kind === "word")
-      return new RegExp(
-        "(^|[^\\p{L}\\p{N}])" + escape(value) + "(?=$|[^\\p{L}\\p{N}])",
-        "iu",
-      ).test(text);
-    const tag = value.replace(/^#/, "");
-    return [...text.matchAll(/#[\p{L}\p{N}_\p{M}]+/gu)].some((found) =>
-      new RegExp("^" + escape(tag) + "$", "iu").test(found[0].slice(1)),
-    );
+    const matched = matchesTextCondition(text, condition);
+    return condition.negated ? !matched : matched;
   });
+}
+function matchesTextCondition(text: string, condition: TextCondition): boolean {
+  const value = normalize(condition.value);
+  if (condition.kind === "part" || condition.kind === "phrase")
+    return new RegExp(escape(value), "iu").test(text);
+  if (condition.kind === "word")
+    return new RegExp(
+      "(^|[^\\p{L}\\p{N}])" + escape(value) + "(?=$|[^\\p{L}\\p{N}])",
+      "iu",
+    ).test(text);
+  const tag = value.replace(/^#/, "");
+  return [...text.matchAll(/#[\p{L}\p{N}_\p{M}]+/gu)].some((found) =>
+    new RegExp("^" + escape(tag) + "$", "iu").test(found[0].slice(1)),
+  );
 }

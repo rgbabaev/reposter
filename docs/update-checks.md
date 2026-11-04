@@ -130,3 +130,9 @@ Disposable Chromium/WebKit checks pass Apply/Clear/Cancel/Escape, page/selection
 TypeScript and production builds pass. Disposable Chromium/WebKit checks cover applied match filters, Activity views, pagination, shared links, reload, Back/Forward, same-path navigation, draft isolation, history replacement, preserved query/fragment/history state, invalid defaults and page clamping. Existing source-filter checks pass at 320/390/900px.
 
 WebKit scenarios pass in separate browser sessions; a combined run hits a native browser assertion on a later full navigation after history traversal. No live Telegram/SMTP actions or migration are required.
+
+## NOT text conditions (task 42)
+
+TypeScript and production builds pass. All 23 existing backend tests and five disposable checks pass, covering literal/Unicode matching, whole-word and hashtag boundaries, boolean validation, required text and attachments, restart persistence, historical snapshots, recovered albums, notification suppression and position advancement.
+
+Disposable Chromium/WebKit checks pass all four exclusion types, real API creation/save/reopen, failed-save drafts, removal, enable/disable, existing rules, the shared 20-condition limit and 320/390/900px layouts. Exclusions apply per rule. No database migration or live Telegram/SMTP actions were required.

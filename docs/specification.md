@@ -58,11 +58,13 @@ An enabled rule must have at least one assigned source. Removing a source remove
 
 During this development-stage upgrade, drop existing rules and create the new rule/assignment structure without backfilling old rules. Rules must be recreated manually. Preserve sources, processing positions and historical match/email snapshots. See [ADR 0007](adr/0007-shared-monitoring-rules.md). Migration 005 implements this change; recreate rules after upgrading.
 
-All conditions in one rule must pass. Any enabled rule can produce a match. Do not provide nested logic, explicit OR groups, NOT conditions, regular expressions, or AI in Release 1.
+All required conditions in one rule must pass. Optional NOT text conditions block that rule when any exclusion matches. Exclusions apply only to their rule; another enabled rule can still produce a match. Do not provide nested logic, explicit OR groups, regular expressions, or AI in Release 1.
 
 Support word parts, complete words, exact phrases, and hashtags. Normalize text to Unicode NFC. Ignore letter case. Use Unicode letter and number boundaries for complete words. Match phrases as contiguous text after normalization. Match hashtags as complete tags; accept input with or without `#`. Do not translate, stem words, or change accents.
 
-The image condition is optional. Without an attachment condition, matching text is sufficient. With an image condition, matching text and at least one image are required. Permit selection of other metadata attachment types. A rule must contain at least one non-empty text condition.
+Use the same text matching for required and NOT conditions, including captions and combined album text. A rule permits 1–20 text conditions in total, with at least one required condition. Each value must contain 1–500 characters. Show exclusions separately in the editor and mark them as NOT in rule headings and new match snapshots. Existing rules retain their behavior; rule edits do not change stored matches. See [ADR 0029](adr/0029-negated-text-conditions.md).
+
+The image condition is optional. Without an attachment condition, matching text is sufficient. With an image condition, matching text and at least one image are required. Permit selection of other metadata attachment types. A rule must contain at least one non-empty required text condition.
 
 Example: rule A requires `apartment` and `rent`. Rule B requires `#housing`. Either rule can match. If both match, create one notification and record both rules.
 

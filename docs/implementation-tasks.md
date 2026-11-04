@@ -300,3 +300,9 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 - [x] Read and replace URL query parameters for applied match filters, Activity views and their pagination; preserve unrelated parameters and fragments.
 - [x] Restore state on reload and browser navigation; retain filter drafts, Apply/Clear page resets and selection reset.
 - Check: type/build checks and disposable Chromium/WebKit checks cover shared URLs, repeated/special values, history replacement, navigation and defaults.
+
+### 42. Add NOT text conditions to rules
+
+- [x] Support optional negation for word parts, whole words, phrases and hashtags using existing normalization and matching. Require at least one positive condition and retain the 20-condition limit.
+- [x] Add an optional exclusion editor, show NOT in rule summaries/headings and preserve exclusions through saving and reopening without a database migration. Apply exclusions per rule, including recovered items and albums; preserve historical matches.
+- Check: type/build checks, existing regressions and disposable matching, persistence, recovery and browser checks. Results: [update-checks.md](update-checks.md).

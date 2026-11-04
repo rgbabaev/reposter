@@ -399,7 +399,7 @@ export function RulesPage() {
     <>
       <PageHeading
         title="Rules"
-        description="Rules are shared across their assigned sources. Edits and disabling apply everywhere. All text conditions must match."
+        description="Rules are shared across their assigned sources. All required text must match; any excluded text blocks that rule."
       />
       <ErrorDialog message={action.error} onClose={action.clear} />
       <ErrorNotice message={sources.error} onRetry={sources.refresh} />
@@ -444,7 +444,10 @@ export function RulesPage() {
             <ul class="conditions">
               {rule.conditions.map((condition, index) => (
                 <li key={index}>
-                  <span>{conditionLabels[condition.kind]}</span>{" "}
+                  <span>
+                    {condition.negated ? "NOT " : ""}
+                    {conditionLabels[condition.kind]}
+                  </span>{" "}
                   <strong>{condition.value}</strong>
                 </li>
               ))}
@@ -549,6 +552,105 @@ export function RuleEditorPage({ id }: { id?: string }) {
     </>
   );
 }
+function TextConditionFields({
+  conditions,
+  excluded = false,
+  canAdd,
+  onChange,
+}: {
+  conditions: TextCondition[];
+  excluded?: boolean;
+  canAdd: boolean;
+  onChange: (conditions: TextCondition[]) => void;
+}) {
+  const label = excluded ? "Exclusion" : "Condition";
+  const updateCondition = (index: number, change: Partial<TextCondition>) =>
+    onChange(
+      conditions.map((condition, i) =>
+        i === index ? { ...condition, ...change } : condition,
+      ),
+    );
+  return (
+    <fieldset>
+      <legend>{excluded ? "Exclude text (optional)" : "Text conditions"}</legend>
+      <p class="muted">
+        {excluded
+          ? "Any matching exclusion blocks this rule. Other rules can still match."
+          : "Every condition must pass. Matching ignores letter case and preserves accents, including exclusions."}
+      </p>
+      {conditions.map((condition, index) => (
+        <div class="condition-editor" key={index}>
+          <div class="field">
+            <wa-select
+              label={`${label} ${index + 1} type`}
+              value={condition.kind}
+              onChange={(event) =>
+                updateCondition(index, {
+                  kind: event.currentTarget.value as TextCondition["kind"],
+                })
+              }
+            >
+              {Object.entries(conditionLabels).map(([kind, text]) => (
+                <wa-option value={kind} key={kind}>
+                  {text}
+                </wa-option>
+              ))}
+            </wa-select>
+          </div>
+          <div class="field">
+            <wa-input
+              label={
+                condition.kind === "hashtag"
+                  ? "Tag, with or without #"
+                  : excluded
+                    ? "Text to exclude"
+                    : "Text to match"
+              }
+              required
+              maxlength={500}
+              value={condition.value}
+              onInput={(event) =>
+                updateCondition(index, {
+                  value: event.currentTarget.value ?? "",
+                })
+              }
+              autocomplete="off"
+            ></wa-input>
+          </div>
+          {(excluded || conditions.length > 1) && (
+            <Button
+              variant="danger"
+              appearance="plain"
+              type="button"
+              class="danger subtle"
+              onClick={() =>
+                onChange(conditions.filter((_, i) => i !== index))
+              }
+            >
+              Remove {excluded ? "exclusion" : "condition"} {index + 1}
+            </Button>
+          )}
+        </div>
+      ))}
+      <Button
+        type="button"
+        disabled={!canAdd}
+        onClick={() =>
+          onChange([
+            ...conditions,
+            {
+              kind: "part",
+              value: "",
+              ...(excluded ? { negated: true } : {}),
+            },
+          ])
+        }
+      >
+        {excluded ? "Add exclusion" : "Add condition"}
+      </Button>
+    </fieldset>
+  );
+}
 function RuleForm({ initial, sources }: { initial?: Rule; sources: Source[] }) {
   const preferred = new URLSearchParams(location.search).get("source");
   const [draft, setDraft] = useState<RuleInput>(() =>
@@ -569,13 +671,8 @@ function RuleForm({ initial, sources }: { initial?: Rule; sources: Source[] }) {
         },
   );
   const action = useAction();
-  const updateCondition = (index: number, change: Partial<TextCondition>) =>
-    setDraft({
-      ...draft,
-      conditions: draft.conditions.map((condition, i) =>
-        i === index ? { ...condition, ...change } : condition,
-      ),
-    });
+  const requiredConditions = draft.conditions.filter((c) => !c.negated);
+  const excludedConditions = draft.conditions.filter((c) => c.negated);
   const types: AttachmentType[] = [
     "image",
     "video",
@@ -627,82 +724,27 @@ function RuleForm({ initial, sources }: { initial?: Rule; sources: Source[] }) {
             </wa-checkbox>
           ))}
         </fieldset>
-        <fieldset>
-          <legend>Text conditions</legend>
-          <p class="muted">
-            Every condition must pass. Matching ignores letter case and
-            preserves accents.
-          </p>
-          {draft.conditions.map((condition, index) => (
-            <div class="condition-editor" key={index}>
-              <div class="field">
-                <wa-select
-                  label={`Condition ${index + 1} type`}
-                  value={condition.kind}
-                  onChange={(event) =>
-                    updateCondition(index, {
-                      kind: event.currentTarget.value as TextCondition["kind"],
-                    })
-                  }
-                >
-                  {Object.entries(conditionLabels).map(([kind, label]) => (
-                    <wa-option value={kind} key={kind}>
-                      {label}
-                    </wa-option>
-                  ))}
-                </wa-select>
-              </div>
-              <div class="field">
-                <wa-input
-                  label={
-                    condition.kind === "hashtag"
-                      ? "Tag, with or without #"
-                      : "Text to match"
-                  }
-                  required
-                  maxlength={500}
-                  value={condition.value}
-                  onInput={(event) =>
-                    updateCondition(index, {
-                      value: event.currentTarget.value ?? "",
-                    })
-                  }
-                  autocomplete="off"
-                ></wa-input>
-              </div>
-              {draft.conditions.length > 1 && (
-                <Button
-                  variant="danger"
-                  appearance="plain"
-                  type="button"
-                  class="danger subtle"
-                  onClick={() =>
-                    setDraft({
-                      ...draft,
-                      conditions: draft.conditions.filter(
-                        (_, i) => i !== index,
-                      ),
-                    })
-                  }
-                >
-                  Remove condition {index + 1}
-                </Button>
-              )}
-            </div>
-          ))}
-          <Button
-            type="button"
-            disabled={draft.conditions.length >= 20}
-            onClick={() =>
-              setDraft({
-                ...draft,
-                conditions: [...draft.conditions, { kind: "part", value: "" }],
-              })
-            }
-          >
-            Add condition
-          </Button>
-        </fieldset>
+        <TextConditionFields
+          conditions={requiredConditions}
+          canAdd={draft.conditions.length < 20}
+          onChange={(conditions) =>
+            setDraft({
+              ...draft,
+              conditions: [...conditions, ...excludedConditions],
+            })
+          }
+        />
+        <TextConditionFields
+          conditions={excludedConditions}
+          excluded
+          canAdd={draft.conditions.length < 20}
+          onChange={(conditions) =>
+            setDraft({
+              ...draft,
+              conditions: [...requiredConditions, ...conditions],
+            })
+          }
+        />
         <fieldset>
           <legend>Attachment condition (optional)</legend>
           <p class="muted">

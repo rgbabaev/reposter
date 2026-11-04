@@ -56,6 +56,7 @@ export type ConditionKind = "part" | "word" | "phrase" | "hashtag";
 export interface TextCondition {
   kind: ConditionKind;
   value: string;
+  negated?: boolean;
 }
 export interface RuleInput {
   sourceIds: ID[];
@@ -269,7 +270,8 @@ export function ruleHeading(
   return (
     [
       ...rule.conditions.map(
-        (condition) => `${condition.kind}: ${condition.value}`,
+        (condition) =>
+          `${condition.negated ? "NOT " : ""}${condition.kind}: ${condition.value}`,
       ),
       ...rule.attachmentTypes,
     ].join(" · ") || "Unassigned rule"
