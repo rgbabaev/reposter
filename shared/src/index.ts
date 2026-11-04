@@ -219,6 +219,7 @@ export interface Schedule {
   };
   createdAt: string;
   blockedRunId?: ID;
+  blockedRunStatus?: PublicationRun["status"];
 }
 export interface PublicationRun {
   id: ID;

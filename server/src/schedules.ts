@@ -14,7 +14,7 @@ export class Schedules {
   ) {}
   private map(row: Record<string, any>): Schedule {
     const blocked = this.store.db.get(
-      "SELECT id,destination,sent_ids,deleted_ids FROM publication_runs WHERE schedule_id=? AND status IN ('queued','deleting','publishing','uncertain','failed')",
+      "SELECT id,status,destination,sent_ids,deleted_ids FROM publication_runs WHERE schedule_id=? AND status IN ('queued','deleting','publishing','uncertain','failed')",
       row.id,
     );
     const previousIds: string[] = JSON.parse(row.previous_ids);
@@ -53,6 +53,7 @@ export class Schedules {
         : undefined,
       createdAt: row.created_at,
       blockedRunId: blocked?.id,
+      blockedRunStatus: blocked?.status,
     };
   }
   get(id: string): Schedule {

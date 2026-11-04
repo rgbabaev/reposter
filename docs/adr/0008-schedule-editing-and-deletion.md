@@ -12,6 +12,8 @@ Edit and delete schedules in synchronous storage transactions, rejecting queued,
 
 Soft-delete schedules, pause them and exclude them from reads and scheduling. Keep their rows for publication-history references; never delete Telegram messages as part of schedule deletion.
 
+Show the blocking run state on schedule cards. Offer confirmed cancellation of queued/failed runs there using the existing publication operation; running and uncertain runs retain their restrictions.
+
 ## Consequences
 
-Destination changes survive restart and repeated edits. Deleted schedules cannot resume through the API. Historical schedules retain their post references. Operators resolve unfinished runs in publication history before editing or deleting.
+Destination changes survive restart and repeated edits. Deleted schedules cannot resume through the API. Historical schedules retain their post references. Operators cancel queued/failed runs from their schedule or history, and review uncertain results in history before editing or deleting.

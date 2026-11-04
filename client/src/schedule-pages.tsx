@@ -41,6 +41,22 @@ function describe(calendar: CalendarSchedule) {
       ? `${weekdays[calendar.weekday!]} at ${time}`
       : `Day ${calendar.day} of each month at ${time} (clamped to month end)`;
 }
+function unfinishedRunMessage(status: Schedule["blockedRunStatus"]) {
+  switch (status) {
+    case "queued":
+      return "A publication is queued. Cancel it to unlock editing and deletion.";
+    case "failed":
+      return "A publication failed. Cancel it to unlock editing and deletion, or retry it in publication history.";
+    case "deleting":
+      return "The previous publication is being deleted. Wait for the run to finish before editing or deleting this schedule.";
+    case "publishing":
+      return "A publication is being sent. Wait for the run to finish before editing or deleting this schedule.";
+    case "uncertain":
+      return "The publication result is uncertain. Check Telegram and review the run in publication history to unlock editing and deletion.";
+    default:
+      return "A run is unfinished. Resolve it in publication history to unlock editing and deletion.";
+  }
+}
 export function SchedulesPage() {
   const [page, setPage] = useState(1);
   const remote = useRemote<Page<Schedule>>(`/schedules?page=${page}`, true);
@@ -136,9 +152,8 @@ function ScheduleCard({
       )}
       {schedule.blockedRunId && (
         <p role="status">
-          A run is unfinished.{" "}
-          <Link href="/publications">Check publication history</Link> before
-          starting another.
+          {unfinishedRunMessage(schedule.blockedRunStatus)}{" "}
+          <Link href="/publications">Check publication history</Link>.
         </p>
       )}
       <ErrorDialog message={action.error} onClose={action.clear} />
@@ -160,7 +175,7 @@ function ScheduleCard({
         </Button>
         <Button
           type="button"
-          disabled={action.busy}
+          disabled={action.busy || !!schedule.blockedRunId}
           onClick={() =>
             void action.run(async () => {
               await api(`/schedules/${schedule.id}/run`, { method: "POST" });
@@ -170,6 +185,31 @@ function ScheduleCard({
         >
           Run Now
         </Button>
+        {schedule.blockedRunId &&
+          (schedule.blockedRunStatus === "queued" ||
+            schedule.blockedRunStatus === "failed") && (
+            <Button
+              type="button"
+              disabled={action.busy}
+              onClick={async () => {
+                if (
+                  !(await confirmAction(
+                    "Cancel this publication run? This unlocks schedule editing and deletion. The schedule keeps its current pause state. Any messages already deleted remain deleted.",
+                  ))
+                )
+                  return;
+                void action.run(async () => {
+                  await api(`/publications/${schedule.blockedRunId}/cancel`, {
+                    method: "POST",
+                  });
+                  void showToast("Publication run cancelled.");
+                  refresh();
+                });
+              }}
+            >
+              Cancel run
+            </Button>
+          )}
         {!schedule.blockedRunId && (
           <Link class="button" href={`/schedules/${schedule.id}/edit`}>
             Edit schedule

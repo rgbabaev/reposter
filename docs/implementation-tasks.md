@@ -327,3 +327,9 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 
 - [x] Render one post link using the first available current message URL. Preserve all message IDs, original destinations, deletion checkpoints and unavailable states.
 - Check: type/build checks, publication-state regressions and disposable Chromium/WebKit checks. See [update-checks.md](update-checks.md).
+
+### 47. Resolve blocked schedules from their cards
+
+- [x] Show the blocking run's state, offer confirmed cancellation of queued/failed runs, refresh deletion/editing controls and disable blocked Run Now.
+- [x] Preserve pause state, message tracking and running/uncertain restrictions.
+- Check: build/type checks, cancellation/deletion regressions and disposable API/browser checks. See [update-checks.md](update-checks.md).
