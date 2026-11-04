@@ -130,8 +130,17 @@ export function Dashboard() {
 }
 
 export function SourcesPage() {
-  const [page, setPage] = useState(1);
-  const [discoveryPage, setDiscoveryPage] = useState(1);
+  const { parameters, page, setPage, replaceParameters } = useListParameters();
+  const requestedDiscoveryPage = Number(parameters.get("discoveryPage"));
+  const discoveryPage =
+    Number.isInteger(requestedDiscoveryPage) &&
+    requestedDiscoveryPage > 0 &&
+    requestedDiscoveryPage <= 1_000_000
+      ? requestedDiscoveryPage
+      : 1;
+  const setDiscoveryPage = (page: number) =>
+    replaceParameters({ discoveryPage: page > 1 ? String(page) : undefined });
+  const hidePrivate = parameters.get("hidePrivate") !== "false";
   const [showDiscovery, setShowDiscovery] = useState(false);
   const listRef = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -139,7 +148,9 @@ export function SourcesPage() {
   }, [showDiscovery]);
   const selected = useRemote<Page<Source>>(`/sources?page=${page}`);
   const discovered = useRemote<Page<DiscoveredSource>>(
-    showDiscovery ? `/discovery?page=${discoveryPage}` : null,
+    showDiscovery
+      ? `/discovery?page=${discoveryPage}&hidePrivate=${hidePrivate}`
+      : null,
   );
   const all = useRemote<Page<Source>>("/sources?pageSize=100");
   const action = useAction();
@@ -221,6 +232,20 @@ export function SourcesPage() {
                   Refresh to discover groups, channels, private chats, and forum
                   topics.
                 </p>
+                <wa-switch
+                  class="check"
+                  checked={hidePrivate}
+                  onChange={(event) =>
+                    replaceParameters({
+                      hidePrivate: event.currentTarget.checked
+                        ? undefined
+                        : "false",
+                      discoveryPage: undefined,
+                    })
+                  }
+                >
+                  Hide DM chats
+                </wa-switch>
                 <ErrorNotice
                   message={discovered.error}
                   onRetry={discovered.refresh}
@@ -269,8 +294,16 @@ export function SourcesPage() {
                   </>
                 ) : (
                   discovered.data && (
-                    <Empty title="No sources listed">
-                      Use Refresh list after connecting Telegram.
+                    <Empty
+                      title={
+                        hidePrivate
+                          ? "No matching sources"
+                          : "No sources listed"
+                      }
+                    >
+                      {hidePrivate
+                        ? "Turn off Hide DM chats to include private chats, or use Refresh list after connecting Telegram."
+                        : "Use Refresh list after connecting Telegram."}
                     </Empty>
                   )
                 )}

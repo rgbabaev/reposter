@@ -311,3 +311,8 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 
 - [x] Keep loaded content mounted during same-resource refreshes across lists and details. Retain content on refresh errors; preserve initial loading and reset data when the request path changes.
 - Check: type/build checks and disposable Chromium/WebKit checks cover rule/source toggles, schedule pause/resume, retries, bulk actions, deletion, errors and resource changes. Results: [update-checks.md](update-checks.md).
+
+### 44. Hide DM chats in source discovery
+
+- [x] Add a default-on “Hide DM chats” switch, filter before pagination and reset discovery pagination when toggled. Preserve filter and page state in the URL.
+- Check: type/build checks and disposable API/browser checks cover default filtering, toggling, pagination, empty results and URL restoration.

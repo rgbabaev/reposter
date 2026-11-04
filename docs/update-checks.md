@@ -142,3 +142,7 @@ Disposable Chromium/WebKit checks pass all four exclusion types, real API creati
 TypeScript and production builds pass. A delayed rule refresh reproduced the list collapsing before the fix. Disposable Chromium/WebKit checks now retain content and scroll during rule/source toggles, schedule pause/resume, notification/publication retries, rule/schedule bulk actions, post deletion, matched-message deletion and detail retries.
 
 Checks also pass refresh failure/retry with retained content, initial loading/error/retry, visibility refresh, pagination, Activity view changes, cancelled requests and 320/390/900px layouts. No live Telegram or SMTP actions were performed.
+
+## Source discovery DM filter (task 44)
+
+TypeScript, production build and all 23 backend tests pass. Disposable API and Chromium/WebKit checks verify default DM exclusion before counting/pagination, toggling and page reset, refresh, adding DMs, empty results, URL restoration and 320/390/900px layouts. No live Telegram or SMTP actions were performed.

@@ -46,6 +46,8 @@ The operator must obtain `api_id` and `api_hash` from `my.telegram.org`. QR logi
 
 List accessible groups, channels, private chats, and forum topics. Let the user select, enable, disable, and remove monitored sources. Refresh the source list on request. Source removal must retain stored matches. A whole forum and one of its topics must not produce duplicate notifications for the same item.
 
+Source discovery has a “Hide DM chats” switch, on by default. Filter private chats before counting and pagination; switching the filter resets discovery to page one. Preserve the filter and discovery page in the URL.
+
 On first enable, save the current source position. Exclude earlier messages. On re-enable, start from a new position; exclude the disabled period. After a service or network outage, recover all available items after the saved position. Recovery has no age limit. Report lost access or unavailable history. Do not promise recovery of deleted or inaccessible messages.
 
 Ignore message edits and deletion events. Inspect message text and captions. Read attachment types from metadata without downloading media during monitoring or rule evaluation. For the web UI, download matched image previews and enlarged images on demand; do not analyze their content.
