@@ -71,7 +71,11 @@ export class Api {
           return;
         }
         if (path === "/api/discovery" && req.method === "GET") {
-          json(res, 200, slice(this.sources?.discovery() || []));
+          const hidePrivate = url.searchParams.get("hidePrivate") === "true";
+          const sources = (this.sources?.discovery() || []).filter(
+            (source) => !hidePrivate || source.kind !== "private",
+          );
+          json(res, 200, slice(sources));
           return;
         }
         if (path === "/api/sources/refresh" && req.method === "POST") {
