@@ -343,15 +343,10 @@ p:last-child {
   flex-wrap: wrap;
   margin-top: 20px;
 }
-.publication-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 16px;
-  padding: 0;
+.publication-link {
   margin: 0;
-  list-style: none;
 }
-.publication-links a {
+.publication-link a {
   display: inline-flex;
   align-items: center;
   min-height: 44px;

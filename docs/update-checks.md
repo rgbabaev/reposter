@@ -152,3 +152,7 @@ TypeScript, production build and all 23 backend tests pass. Disposable API and C
 TypeScript, production build and all 29 backend tests pass. Six new regressions cover group/topic links, unavailable links, albums, destination edits, history deletion, restart, deletion checkpoints, cancellation and uncertain/partial sends.
 
 Disposable authenticated API and Chromium/WebKit checks pass schedule list/detail links, ten-message albums, empty/unavailable states, keyboard opening in a new tab, selection behavior, 44px link targets and 320/390/900px layouts. Telegram navigation was intercepted locally; live link opening remains unverified.
+
+## One schedule link per post (task 46)
+
+TypeScript, production build and all six publication-link regressions pass. Disposable Chromium/WebKit checks at 320/390/900px verify one link for ten-message albums and single messages, first available URL selection, one unavailable label, empty states, original destinations, keyboard opening, selection and 44px targets. API checks retain every album message ID. Telegram navigation was intercepted locally.

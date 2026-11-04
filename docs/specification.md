@@ -140,7 +140,7 @@ Schedules support editing their post, destination and UTC recurrence. Preserve p
 
 Before publication, delete the previous publication from that schedule. Delete only system-created messages. Store every sent message ID, including album items. If deletion fails, stop that run and report the error. Treat an already deleted message as success.
 
-Show recorded current publication messages on schedule cards, linking each message when the connector supports it and labelling unavailable links otherwise. Use the publication's original destination after edits; retain links when history is deleted. Exclude messages already deleted during replacement and include acknowledged sends awaiting review.
+Show one current post link per schedule, including composite posts with several attachments. Use the first available message link, or label the link unavailable. Retain all message IDs for replacement. Use the publication's original destination after edits; retain links when history is deleted. Exclude messages already deleted during replacement and include acknowledged sends awaiting review.
 
 After downtime, run one overdue publication immediately. Do not replay every missed interval. Then wait a full hourly interval after successful publication, or resume the original calendar recurrence. Serialize runs per schedule. Paused schedules must not run during restart. Store run state before external calls. Reconcile uncertain publication results before retrying.
 
