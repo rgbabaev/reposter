@@ -213,6 +213,10 @@ export interface Schedule {
   nextRunAt: string;
   previousDestination?: PublicationDestination;
   previousIds: ID[];
+  currentPublication?: {
+    destination: PublicationDestination;
+    messages: { id: ID; url?: string }[];
+  };
   createdAt: string;
   blockedRunId?: ID;
 }

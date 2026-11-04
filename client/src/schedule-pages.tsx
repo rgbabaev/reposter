@@ -98,6 +98,10 @@ function ScheduleCard({
   refresh: () => void;
 }) {
   const action = useAction();
+  const publication = schedule.currentPublication;
+  const message =
+    publication?.messages.find((message) => message.url) ??
+    publication?.messages[0];
   return (
     <wa-card role="article" class="card">
       <h2>{scheduleHeading(schedule)}</h2>
@@ -114,6 +118,22 @@ function ScheduleCard({
         Each run deletes this schedule's previous publication before sending its
         replacement.
       </p>
+      {publication && message ? (
+        <div>
+          <p>Published post in {publication.destination.name}</p>
+          <p class="publication-link">
+            {message.url ? (
+              <a href={message.url} target="_blank" rel="noopener noreferrer">
+                Open post
+              </a>
+            ) : (
+              <span>Message {message.id} · Link unavailable</span>
+            )}
+          </p>
+        </div>
+      ) : (
+        <p class="muted">No current publication recorded.</p>
+      )}
       {schedule.blockedRunId && (
         <p role="status">
           A run is unfinished.{" "}

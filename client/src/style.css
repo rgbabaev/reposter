@@ -343,6 +343,14 @@ p:last-child {
   flex-wrap: wrap;
   margin-top: 20px;
 }
+.publication-link {
+  margin: 0;
+}
+.publication-link a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
 .pager {
   display: flex;
   align-items: center;
