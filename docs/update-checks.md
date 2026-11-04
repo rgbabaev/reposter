@@ -156,3 +156,9 @@ Disposable authenticated API and Chromium/WebKit checks pass schedule list/detai
 ## One schedule link per post (task 46)
 
 TypeScript, production build and all six publication-link regressions pass. Disposable Chromium/WebKit checks at 320/390/900px verify one link for ten-message albums and single messages, first available URL selection, one unavailable label, empty states, original destinations, keyboard opening, selection and 44px targets. API checks retain every album message ID. Telegram navigation was intercepted locally.
+
+## Blocked schedule cancellation (task 47)
+
+TypeScript, production build and all 34 backend tests pass. Five new regressions verify queued/failed cancellation unlocks deletion while retaining pause state, remaining messages, posts and history; running/uncertain states remain protected.
+
+Disposable authenticated API and Chromium/WebKit checks pass state messages, blocked controls, confirmation dismissal/acceptance, cancellation followed by deletion, stale-state errors and 320/390/900px layouts. Existing application data was inspected read-only; cancellation/deletion checks used fixtures without Telegram calls.
