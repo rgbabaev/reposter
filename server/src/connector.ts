@@ -38,6 +38,10 @@ export interface Connector {
     request: PublicationRequest,
     recordIds: (ids: ID[]) => void,
   ): Promise<ID[]>;
+  publicationMessageUrl?(
+    destination: PublicationDestination,
+    id: ID,
+  ): string | undefined;
   deletePublication?(
     destination: PublicationDestination,
     ids: ID[],

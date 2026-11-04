@@ -146,3 +146,9 @@ Checks also pass refresh failure/retry with retained content, initial loading/er
 ## Source discovery DM filter (task 44)
 
 TypeScript, production build and all 23 backend tests pass. Disposable API and Chromium/WebKit checks verify default DM exclusion before counting/pagination, toggling and page reset, refresh, adding DMs, empty results, URL restoration and 320/390/900px layouts. No live Telegram or SMTP actions were performed.
+
+## Schedule publication links (task 45)
+
+TypeScript, production build and all 29 backend tests pass. Six new regressions cover group/topic links, unavailable links, albums, destination edits, history deletion, restart, deletion checkpoints, cancellation and uncertain/partial sends.
+
+Disposable authenticated API and Chromium/WebKit checks pass schedule list/detail links, ten-message albums, empty/unavailable states, keyboard opening in a new tab, selection behavior, 44px link targets and 320/390/900px layouts. Telegram navigation was intercepted locally; live link opening remains unverified.

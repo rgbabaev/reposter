@@ -14,8 +14,19 @@ export class Schedules {
   ) {}
   private map(row: Record<string, any>): Schedule {
     const blocked = this.store.db.get(
-      "SELECT id FROM publication_runs WHERE schedule_id=? AND status IN ('queued','deleting','publishing','uncertain','failed')",
+      "SELECT id,destination,sent_ids,deleted_ids FROM publication_runs WHERE schedule_id=? AND status IN ('queued','deleting','publishing','uncertain','failed')",
       row.id,
+    );
+    const previousIds: string[] = JSON.parse(row.previous_ids);
+    const sentIds: string[] = blocked ? JSON.parse(blocked.sent_ids) : [];
+    const deletedIds: string[] = blocked ? JSON.parse(blocked.deleted_ids) : [];
+    const publishedIds = sentIds.length
+      ? sentIds
+      : previousIds.filter((id) => !deletedIds.includes(id));
+    const publicationDestination = JSON.parse(
+      sentIds.length
+        ? blocked!.destination
+        : row.previous_destination || row.destination,
     );
     return {
       id: row.id,
@@ -30,7 +41,16 @@ export class Schedules {
       previousDestination: row.previous_destination
         ? JSON.parse(row.previous_destination)
         : undefined,
-      previousIds: JSON.parse(row.previous_ids),
+      previousIds,
+      currentPublication: publishedIds.length
+        ? {
+            destination: publicationDestination,
+            messages: publishedIds.map((id) => ({
+              id,
+              url: this.publications.messageUrl(publicationDestination, id),
+            })),
+          }
+        : undefined,
       createdAt: row.created_at,
       blockedRunId: blocked?.id,
     };

@@ -17,8 +17,10 @@ import { abortable, abortableItems } from "../../cancellation.js";
 import { NotificationError, type NotificationRequest, PublicationError, type PublicationRequest } from "../../connector.js";
 import type { PublicationDestination } from "@monitor/shared";
 import { publishTelegram, verifyTelegramPublication } from "./publication.js";
+import { telegramPublicationMessageUrl } from "./message-links.js";
 export class TelegramConnector implements Connector {
   readonly accountId = "telegram";
+  readonly publicationMessageUrl = telegramPublicationMessageUrl;
   protected client?: TelegramClient;
   private state: ConnectorStatus["state"] = "disconnected";
   private retryAt = 0;

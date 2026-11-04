@@ -316,3 +316,9 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 
 - [x] Add a default-on “Hide DM chats” switch, filter before pagination and reset discovery pagination when toggled. Preserve filter and page state in the URL.
 - Check: type/build checks and disposable API/browser checks cover default filtering, toggling, pagination, empty results and URL restoration.
+
+### 45. Link published messages from schedules
+
+- [x] Show current message links, including albums and topics, using retained IDs and connector-owned URLs. Preserve original destinations and history-independent tracking; label unavailable links.
+- [x] Reflect deletion checkpoints and acknowledged sends awaiting review.
+- Check: build/type checks, publication-state regressions and disposable API/browser checks. See [update-checks.md](update-checks.md).

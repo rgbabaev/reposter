@@ -90,6 +90,9 @@ export class Publications {
   connected() {
     return this.connector.status().state === "connected";
   }
+  messageUrl(destination: PublicationDestination, id: string) {
+    return this.connector.publicationMessageUrl?.(destination, id);
+  }
   queue(
     postId: unknown,
     destination: PublicationDestination,

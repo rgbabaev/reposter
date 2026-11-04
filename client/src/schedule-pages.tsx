@@ -114,6 +114,28 @@ function ScheduleCard({
         Each run deletes this schedule's previous publication before sending its
         replacement.
       </p>
+      {schedule.currentPublication ? (
+        <div>
+          <p>
+            Published messages in {schedule.currentPublication.destination.name}
+          </p>
+          <ul class="publication-links">
+            {schedule.currentPublication.messages.map((message) => (
+              <li key={message.id}>
+                {message.url ? (
+                  <a href={message.url} target="_blank" rel="noopener noreferrer">
+                    Open message {message.id}
+                  </a>
+                ) : (
+                  <span>Message {message.id} · Link unavailable</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p class="muted">No current publication recorded.</p>
+      )}
       {schedule.blockedRunId && (
         <p role="status">
           A run is unfinished.{" "}
