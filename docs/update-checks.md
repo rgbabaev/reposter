@@ -136,3 +136,9 @@ WebKit scenarios pass in separate browser sessions; a combined run hits a native
 TypeScript and production builds pass. All 23 existing backend tests and five disposable checks pass, covering literal/Unicode matching, whole-word and hashtag boundaries, boolean validation, required text and attachments, restart persistence, historical snapshots, recovered albums, notification suppression and position advancement.
 
 Disposable Chromium/WebKit checks pass all four exclusion types, real API creation/save/reopen, failed-save drafts, removal, enable/disable, existing rules, the shared 20-condition limit and 320/390/900px layouts. Exclusions apply per rule. No database migration or live Telegram/SMTP actions were required.
+
+## Refresh scrolling (task 43)
+
+TypeScript and production builds pass. A delayed rule refresh reproduced the list collapsing before the fix. Disposable Chromium/WebKit checks now retain content and scroll during rule/source toggles, schedule pause/resume, notification/publication retries, rule/schedule bulk actions, post deletion, matched-message deletion and detail retries.
+
+Checks also pass refresh failure/retry with retained content, initial loading/error/retry, visibility refresh, pagination, Activity view changes, cancelled requests and 320/390/900px layouts. No live Telegram or SMTP actions were performed.

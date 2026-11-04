@@ -306,3 +306,8 @@ Local verification for tasks 18–19 and the remaining operator checklist: [upda
 - [x] Support optional negation for word parts, whole words, phrases and hashtags using existing normalization and matching. Require at least one positive condition and retain the 20-condition limit.
 - [x] Add an optional exclusion editor, show NOT in rule summaries/headings and preserve exclusions through saving and reopening without a database migration. Apply exclusions per rule, including recovered items and albums; preserve historical matches.
 - Check: type/build checks, existing regressions and disposable matching, persistence, recovery and browser checks. Results: [update-checks.md](update-checks.md).
+
+### 43. Preserve scroll during data refresh
+
+- [x] Keep loaded content mounted during same-resource refreshes across lists and details. Retain content on refresh errors; preserve initial loading and reset data when the request path changes.
+- Check: type/build checks and disposable Chromium/WebKit checks cover rule/source toggles, schedule pause/resume, retries, bulk actions, deletion, errors and resource changes. Results: [update-checks.md](update-checks.md).

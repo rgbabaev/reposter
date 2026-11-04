@@ -35,17 +35,24 @@ export async function api<T>(
   return value as T;
 }
 export function useRemote<T>(path: string | null, poll = false) {
-  const [data, setData] = useState<T>();
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(!!path);
+  const [state, setState] = useState<{
+    path: string | null;
+    data?: T;
+    error: string;
+    loading: boolean;
+  }>({ path, error: "", loading: !!path });
   const [version, setVersion] = useState(0);
   const refresh = useCallback(() => setVersion((value) => value + 1), []);
   const request = useRef<AbortController | undefined>(undefined);
   useEffect(() => {
     let cancelled = false;
-    setData(undefined);
-    setError("");
-    setLoading(!!path);
+    setState((previous) => ({
+      path,
+      data: previous.path === path ? previous.data : undefined,
+      error: "",
+      loading:
+        !!path && (previous.path !== path || previous.data === undefined),
+    }));
     if (!path) return;
     const load = async (initial = false) => {
       if (document.visibilityState !== "visible" && (poll || !initial)) return;
@@ -55,21 +62,23 @@ export function useRemote<T>(path: string | null, poll = false) {
       try {
         const value = await api<T>(path, { signal: controller.signal });
         if (!cancelled) {
-          setData(value);
-          setError("");
+          setState({ path, data: value, error: "", loading: false });
         }
       } catch (reason) {
         if (
           !cancelled &&
           !(reason instanceof DOMException && reason.name === "AbortError")
         )
-          setError(
-            reason instanceof Error
-              ? reason.message
-              : "Cannot reach the server.",
-          );
+          setState((previous) => ({
+            ...previous,
+            error:
+              reason instanceof Error
+                ? reason.message
+                : "Cannot reach the server.",
+          }));
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled)
+          setState((previous) => ({ ...previous, loading: false }));
       }
     };
     void load(true);
@@ -90,7 +99,14 @@ export function useRemote<T>(path: string | null, poll = false) {
       document.removeEventListener("visibilitychange", visible);
     };
   }, [path, poll, version]);
-  return { data, error, loading, refresh };
+  const current =
+    state.path === path ? state : { data: undefined, error: "", loading: !!path };
+  return {
+    data: current.data,
+    error: current.error,
+    loading: current.loading,
+    refresh,
+  };
 }
 export function useAction() {
   const [busy, setBusy] = useState(false);
